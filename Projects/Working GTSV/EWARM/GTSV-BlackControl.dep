@@ -5,7 +5,14 @@
   <fileChecksum>4227297201</fileChecksum>
   <configuration>
     <name>STM32L-Discovery</name>
-    <outputs/>
+    <outputs>
+      <file>$PROJ_DIR$\..\src\GTSV_BlackControl_lcd.c</file>
+      <file>$PROJ_DIR$\..\src\GTSV_RH_RTC_config.c</file>
+      <file>$PROJ_DIR$\..\src\IRremote.c</file>
+      <file>$PROJ_DIR$\..\src\main.c</file>
+      <file>$PROJ_DIR$\..\src\stm32l1xx_it.c</file>
+      <file>$PROJ_DIR$\..\src\system_stm32l1xx.c</file>
+    </outputs>
   </configuration>
 </project>
 

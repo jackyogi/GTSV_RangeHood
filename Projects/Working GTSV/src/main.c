@@ -33,9 +33,6 @@
 
 
 
-
-
-
 /* Private variables ---------------------------------------------------------*/
 static volatile uint32_t TimingDelay;
 

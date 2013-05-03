@@ -82,6 +82,9 @@ extern uint16_t gBuzzerSoundLenghtMs;
 #define BITBAND_SRAM(a,b) ((PERIPH_BB_BASE + (a-PERIPH_BASE)*32 + (b*4)))
 #endif
 
+
+
+
 #ifdef DEBUG
 #define TIME_DEBUG_SET(pin_num)	*((volatile unsigned char *)(BITBAND_PERI(GPIOB_BASE + 0x18, pin_num))) = 1
 #define TIME_DEBUG_RESET(pin_num) *((volatile unsigned char *)(BITBAND_PERI(GPIOB_BASE + 0x1A, pin_num))) = 1
