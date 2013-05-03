@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>767701221</fileChecksum>
+  <configuration>
+    <name>STM32L-Discovery</name>
+    <outputs>
+      <file>$PROJ_DIR$\..\src\discover_functions.c</file>
+      <file>$PROJ_DIR$\..\src\icc_measure.c</file>
+      <file>$PROJ_DIR$\..\src\icc_measure_Ram.c</file>
+      <file>$PROJ_DIR$\..\src\main.c</file>
+      <file>$PROJ_DIR$\..\src\stm32l1xx_it.c</file>
+      <file>$PROJ_DIR$\..\src\system_stm32l1xx.c</file>
+      <file>$PROJ_DIR$\..\..\..\Utilities\STM32L-DISCOVERY\stm32l_discovery_lcd.c</file>
+    </outputs>
+  </configuration>
+</project>
+
+
