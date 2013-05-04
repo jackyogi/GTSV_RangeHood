@@ -171,6 +171,7 @@
           <state>STM32L15XXB_128K</state>
           <state>USE_FULL_ASSERT</state>
           <state>USE_STDPERIPH_DRIVER</state>
+          <state>STM32L1XX_MD</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -303,6 +304,7 @@
           <state>$PROJ_DIR$\..\..\..\libraries\STM32L1xx_StdPeriph_Driver\inc</state>
           <state>$PROJ_DIR$\..\..\..\libraries\STM32_TouchSensing_Driver\inc</state>
           <state>$PROJ_DIR$\..\..\..\libraries\CMSIS\CM3\DeviceSupport\ST\STM32L1xx</state>
+          <state>$PROJ_DIR$\..\..\..\libraries\STMTouch_Driver\inc</state>
           <state>$PROJ_DIR$\..\..\..\Utilities\STM32L-DISCOVERY</state>
         </option>
         <option>
@@ -979,7 +981,43 @@
     </file>
   </group>
   <group>
-    <name>TouchSensingDriver</name>
+    <name>STMTouch</name>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_acq.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_acq_stm32l1xx_sw.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_dxs.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_ecs.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_filter.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_globals.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_linrot.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_object.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_time.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_time_stm32l1xx.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STMTouch_Driver\src\tsl_touchkey.c</name>
+    </file>
   </group>
   <group>
     <name>User</name>
@@ -1000,6 +1038,15 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\system_stm32l1xx.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\tsl_conf_stm32l1xx.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\tsl_user.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\tsl_user.h</name>
     </file>
   </group>
 </project>

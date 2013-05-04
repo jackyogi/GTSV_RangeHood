@@ -3,7 +3,7 @@
   * @file    Project/STM32L1xx_StdPeriph_Template/main.h 
   * @author  MCD Application Team
   * @version V1.0.0
-  * @date    13-September-2011
+  * @date    13-September-2013
   * @brief   Header for main.c module
   ******************************************************************************
   * @attention
@@ -15,7 +15,7 @@
   * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
   * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
   *
-  * <h2><center>&copy; COPYRIGHT 2010 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT 2013 STMicroelectronics</center></h2>
   ******************************************************************************
   */ 
   
@@ -108,7 +108,7 @@ void Ports_to_default_config(void);
 void Timers_to_default_config(void);
 void Buzzer_bip(void);
 void Buzzer_bip_ms(uint16_t ms);
-
+void Gtsv_main_loop(void);
 
 
 

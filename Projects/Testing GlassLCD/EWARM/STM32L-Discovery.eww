@@ -7,6 +7,9 @@
   <project>
     <path>$WS_DIR$\STM32L-Discovery.ewp</path>
   </project>
+  <project>
+    <path>$WS_DIR$\..\..\TestTouch\EWARM\testTouch.ewp</path>
+  </project>
   <batchBuild/>
 </workspace>
 

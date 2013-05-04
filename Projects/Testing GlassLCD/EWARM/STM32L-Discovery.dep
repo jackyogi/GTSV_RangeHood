@@ -5,7 +5,20 @@
   <fileChecksum>767701221</fileChecksum>
   <configuration>
     <name>STM32L-Discovery</name>
-    <outputs/>
+    <outputs>
+      <file>$PROJ_DIR$\..\..\..\Libraries\STM32_TouchSensing_Driver\src\stm32_tsl_api.c</file>
+      <file>$PROJ_DIR$\..\..\..\Libraries\STM32_TouchSensing_Driver\src\stm32_tsl_multichannelkey.c</file>
+      <file>$PROJ_DIR$\..\..\..\Libraries\STM32_TouchSensing_Driver\src\stm32_tsl_services.c</file>
+      <file>$PROJ_DIR$\..\..\..\Libraries\STM32_TouchSensing_Driver\src\stm32_tsl_singlechannelkey.c</file>
+      <file>$PROJ_DIR$\..\..\..\Libraries\STM32_TouchSensing_Driver\src\stm32_tsl_timebase.c</file>
+      <file>$PROJ_DIR$\..\..\..\Libraries\STM32_TouchSensing_Driver\src\stm32l15x_tsl_ct_acquisition.c</file>
+      <file>$PROJ_DIR$\..\src\discover_functions.c</file>
+      <file>$PROJ_DIR$\..\src\icc_measure.c</file>
+      <file>$PROJ_DIR$\..\src\icc_measure_Ram.c</file>
+      <file>$PROJ_DIR$\..\src\main.c</file>
+      <file>$PROJ_DIR$\..\src\stm32l1xx_it.c</file>
+      <file>$PROJ_DIR$\..\src\system_stm32l1xx.c</file>
+    </outputs>
   </configuration>
 </project>
 

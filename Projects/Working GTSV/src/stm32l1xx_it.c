@@ -26,6 +26,7 @@
 #include "GTSV_BlackControl_board.h"
 #include "IRremote.h"
 #include "main.h"
+#include "tsl_user.h"
 
 
 /** @addtogroup Template_Project
@@ -136,6 +137,10 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
+
+	// TSL timing for ECS, DTO, ...
+	TSL_tim_ProcessIT();
+	
     msTicks++;
 	if((msTicks%10) ==0){
 		gSystemFlags.ms10_flag =1;

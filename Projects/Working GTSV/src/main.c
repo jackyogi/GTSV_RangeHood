@@ -30,6 +30,7 @@
 #include "IRremote.h"
 #include "main.h"
 #include "GTSV_RH_RTC_config.h"
+#include "tsl_user.h"
 
 
 
@@ -51,7 +52,6 @@ GPIO_InitTypeDef GPIO_InitStructure;
 EXTI_InitTypeDef EXTI_InitStructure;
 NVIC_InitTypeDef NVIC_InitStructure;
 TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-
 
 
 
@@ -107,94 +107,118 @@ int main(void)
 
 	Irr_init();
 	
-  
+    TSL_user_Init();
+    
   /*Until application reset*/
   while (1)
   {
-	if(Irr_decode(&irr_decode_results)){
-		
-		if(irr_decode_results.value == IRR_NEC_REPEAT){
-			if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDDOWN){
-				Buzzer_bip();
-			} else if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDUP){
-				Buzzer_bip();
-			}
-		}else if(gSystemFlags.system_state==1){
-			tmp_ir_cmd= irr_decode_results.value;
-			
-			switch(tmp_ir_cmd){
-			case IRR_NEC_CMD_LIGHT:
-				Lcd_icon_toggle(LCD_LIGHTBULB_ICON);
-				Lcd_icon_toggle(LCD_LIGHTRAY_ICON);
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_ONOFF:
-				//turn off led
-				GPIOB->ODR = !GPIO_Pin_12;
-				gSystemFlags.system_state = 0;
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_TIMER:
-				Lcd_icon_toggle(LCD_CLOCK_ICON);
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_AUTO:
-				Lcd_icon_toggle(LCD_ROTATE_ICON);
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_SPEEDDOWN:
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_SPEEDUP:
-				Buzzer_bip();
-				break;
-			default:
-				break;
-			};
-		} else if(gSystemFlags.system_state == 0){
-			tmp_ir_cmd= irr_decode_results.value;
-			if(tmp_ir_cmd == IRR_NEC_CMD_ONOFF){
-				gSystemFlags.system_state = 1;
-				GPIOB->ODR = GPIO_Pin_12;
-				Buzzer_bip();
-			}
-		}
-		
-		Irr_resume();	
-	}
-  
-
-  	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-    RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
-	Lcd_fill_hours(RTC_TimeStructure.RTC_Minutes);
-	Lcd_fill_mins(RTC_TimeStructure.RTC_Seconds);
-	
-	//Lcd_icon_on(LCD_LIGHTBULB_ICON);
-	//Lcd_icon_on(LCD_ROTATE_ICON);
-	//Lcd_icon_on(LCD_CLOCK_ICON);
-	//Lcd_icon_on(LCD_LIGHTRAY_ICON);
-	if(gSystemFlags.ms500_flag){
-		gSystemFlags.ms500_flag = 0;
-		GPIO_TOGGLE(GPIOB,GPIO_Pin_7);
-		Lcd_icon_toggle(LCD_COLON_ICON);
-	
-	}
-
-	if(gSystemFlags.ms300_flag){
-		gSystemFlags.ms300_flag=0;
-		if(++gSystemFlags.fanRotate==3)
-			gSystemFlags.fanRotate=0;
-		
-	}
-	if(gSystemFlags.system_state == 1)
-		Lcd_icon_fan(gSystemFlags.fanRotate);
-	else
-		Lcd_icon_off(LCD_ALL_ICON);
-
-	
-	LCD_UpdateDisplayRequest();
+	Gtsv_main_loop();
 
   }
+}
+
+
+void Gtsv_main_loop (void)
+{
+  //============================================================================
+  // Main loop
+  //============================================================================
+
+  for (;;)
+  {
+    // Execute STMTouch Driver state machine
+    if (TSL_user_Action() == TSL_STATUS_OK)
+    {
+    		Buzzer_bip();
+      //ProcessSensors(); // Execute sensors related tasks
+    }
+    else
+    {
+		 if(Irr_decode(&irr_decode_results)){
+			
+			if(irr_decode_results.value == IRR_NEC_REPEAT){
+				if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDDOWN){
+					Buzzer_bip();
+				} else if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDUP){
+					Buzzer_bip();
+				}
+			}else if(gSystemFlags.system_state==1){
+				tmp_ir_cmd= irr_decode_results.value;
+				
+				switch(tmp_ir_cmd){
+				case IRR_NEC_CMD_LIGHT:
+					Lcd_icon_toggle(LCD_LIGHTBULB_ICON);
+					Lcd_icon_toggle(LCD_LIGHTRAY_ICON);
+					Buzzer_bip();
+					break;
+				case IRR_NEC_CMD_ONOFF:
+					//turn off led
+					GPIOB->ODR = !GPIO_Pin_12;
+					gSystemFlags.system_state = 0;
+					Buzzer_bip();
+					break;
+				case IRR_NEC_CMD_TIMER:
+					Lcd_icon_toggle(LCD_CLOCK_ICON);
+					Buzzer_bip();
+					break;
+				case IRR_NEC_CMD_AUTO:
+					Lcd_icon_toggle(LCD_ROTATE_ICON);
+					Buzzer_bip();
+					break;
+				case IRR_NEC_CMD_SPEEDDOWN:
+					Buzzer_bip();
+					break;
+				case IRR_NEC_CMD_SPEEDUP:
+					Buzzer_bip();
+					break;
+				default:
+					break;
+				};
+			} else if(gSystemFlags.system_state == 0){
+				tmp_ir_cmd= irr_decode_results.value;
+				if(tmp_ir_cmd == IRR_NEC_CMD_ONOFF){
+					gSystemFlags.system_state = 1;
+					GPIOB->ODR = GPIO_Pin_12;
+					Buzzer_bip();
+				}
+			}
+			
+			Irr_resume();	
+		}
+
+
+			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+		RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
+		Lcd_fill_hours(RTC_TimeStructure.RTC_Minutes);
+		Lcd_fill_mins(RTC_TimeStructure.RTC_Seconds);
+
+		//Lcd_icon_on(LCD_LIGHTBULB_ICON);
+		//Lcd_icon_on(LCD_ROTATE_ICON);
+		//Lcd_icon_on(LCD_CLOCK_ICON);
+		//Lcd_icon_on(LCD_LIGHTRAY_ICON);
+		if(gSystemFlags.ms500_flag){
+			gSystemFlags.ms500_flag = 0;
+			GPIO_TOGGLE(GPIOB,GPIO_Pin_7);
+			Lcd_icon_toggle(LCD_COLON_ICON);
+
+		}
+
+		if(gSystemFlags.ms300_flag){
+			gSystemFlags.ms300_flag=0;
+			if(++gSystemFlags.fanRotate==3)
+				gSystemFlags.fanRotate=0;
+			
+		}
+		if(gSystemFlags.system_state == 1)
+			Lcd_icon_fan(gSystemFlags.fanRotate);
+		else
+			Lcd_icon_off(LCD_ALL_ICON);
+
+
+		LCD_UpdateDisplayRequest();
+    }
+  }
+
 }
 
 void Cpu_to_default_config(void)
@@ -373,6 +397,37 @@ void Get_system_clk_config(void)
   _gSystemConfig.RCC_FLAG_LPWRRST1 = RCC_GetFlagStatus(RCC_FLAG_LPWRRST);
 
 }
+
+
+/**
+  * @brief  Executed when a sensor is in Error state
+  * @param  None
+  * @retval None
+  */
+void MyTKeys_ErrorStateProcess(void)
+{
+  // Add here your own processing when a sensor is in Error state
+  TSL_tkey_SetStateOff();
+/*
+  for (;;)
+  {
+	//GPIOB->BSRR |= GPIO_Pin_6;
+	GPIO_HIGH(GPIOB,GPIO_Pin_6);
+  }
+  */
+}
+
+
+/**
+  * @brief  Executed when a sensor is in Off state
+  * @param  None
+  * @retval None
+  */
+void MyTKeys_OffStateProcess(void)
+{
+  // Add here your own processing when a sensor is in Off state
+}
+
 
 
 #ifdef  USE_FULL_ASSERT
