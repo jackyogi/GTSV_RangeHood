@@ -27,7 +27,7 @@
 #include "stm32l1xx.h"
 #include "GTSV_BlackControl_board.h"
 #include "GTSV_BlackControl_lcd.h"
-#include "stm32_tsl_api.h"
+#include "GTSV_TSense.h"
 
 #include <stdio.h>
 

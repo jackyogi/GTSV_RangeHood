@@ -139,14 +139,14 @@
 //
 //==============================================================================
 
-#define SCKEY_P1_KEY_COUNT  (3)
+#define SCKEY_P1_KEY_COUNT  (4)
 
 #define SCKEY_P1_CH   (CH1) /**< Possible values are CH1, CH2, CH3 and CH4 */
 
 #define SCKEY_P1_A  (GROUP2)
 #define SCKEY_P1_B  (GROUP3)
-#define SCKEY_P1_C  (GROUP9)
-#define SCKEY_P1_D  (0)
+#define SCKEY_P1_C  (GROUP10)
+#define SCKEY_P1_D  (GROUP9)
 #define SCKEY_P1_E  (0)
 #define SCKEY_P1_F  (0)
 #define SCKEY_P1_G  (0)
@@ -168,11 +168,11 @@
 //
 //==============================================================================
 
-#define SCKEY_P2_KEY_COUNT  (0)
+#define SCKEY_P2_KEY_COUNT  (1)
 
-#define SCKEY_P2_CH   (0) /**< Possible values are CH1, CH2, CH3 and CH4 */
+#define SCKEY_P2_CH   (CH3) /**< Possible values are CH1, CH2, CH3 and CH4 */
 
-#define SCKEY_P2_A  (0)
+#define SCKEY_P2_A  (GROUP10)
 #define SCKEY_P2_B  (0)
 #define SCKEY_P2_C  (0)
 #define SCKEY_P2_D  (0)
@@ -349,8 +349,8 @@
   * @{ */
 
 // Integrators
-#define DETECTION_INTEGRATOR_DEFAULT       (2)  /**< Detection Integrator = Debounce Filter (value from 0 to 255) */
-#define END_DETECTION_INTEGRATOR_DEFAULT   (2)  /**< End detection Integrator = Debounce Filter (from 0 to 255) */
+#define DETECTION_INTEGRATOR_DEFAULT       (1)  /**< Detection Integrator = Debounce Filter (value from 0 to 255) */
+#define END_DETECTION_INTEGRATOR_DEFAULT   (0)  /**< End detection Integrator = Debounce Filter (from 0 to 255) */
 #define RECALIBRATION_INTEGRATOR_DEFAULT  (10)  /**< Calibration integrator (value from 1 to 255) */
 
 // IIR Filter
