@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-563760357
+Checksum=1266112215
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -47,16 +47,21 @@ ITMportsTermIO=0
 ITMportsLogFile=0
 ITMlogFile=$PROJ_DIR$\ITM.log
 [struct_types]
-Fmt0=RTC_DateTypeDef-RTC_Date	3	0
-Fmt1=RTC_DateTypeDef-RTC_Month	3	0
-Fmt2=RTC_DateTypeDef-RTC_WeekDay	3	0
-Fmt3=RTC_DateTypeDef-RTC_Year	3	0
-Fmt4=RTC_TimeTypeDef-RTC_H12	3	0
-Fmt5=RTC_TimeTypeDef-RTC_Hours	3	0
-Fmt6=RTC_TimeTypeDef-RTC_Minutes	3	0
-Fmt7=RTC_TimeTypeDef-RTC_Seconds	3	0
-Fmt8=struct irr_decode_results_t-value	4	0
-Fmt9=struct irr_decode_results_t-value_bit_len	4	0
+Fmt0=Channel_Info_T-ECSRefRest	3	0
+Fmt1=Channel_Info_T-IntegratorCounter	3	0
+Fmt2=RTC_DateTypeDef-RTC_Date	3	0
+Fmt3=RTC_DateTypeDef-RTC_Month	3	0
+Fmt4=RTC_DateTypeDef-RTC_WeekDay	3	0
+Fmt5=RTC_DateTypeDef-RTC_Year	3	0
+Fmt6=RTC_TimeTypeDef-RTC_H12	3	0
+Fmt7=RTC_TimeTypeDef-RTC_Hours	3	0
+Fmt8=RTC_TimeTypeDef-RTC_Minutes	3	0
+Fmt9=RTC_TimeTypeDef-RTC_Seconds	3	0
+Fmt10=struct <Unnamed 37>-DetectThreshold	3	0
+Fmt11=struct <Unnamed 37>-EndDetectThreshold	3	0
+Fmt12=struct <Unnamed 37>-RecalibrationThreshold	3	0
+Fmt13=struct irr_decode_results_t-value	4	0
+Fmt14=struct irr_decode_results_t-value_bit_len	4	0
 [array_types]
 Fmt0=uint32_t[8]	1	0
 [watch_formats]

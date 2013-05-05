@@ -136,6 +136,8 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
+	/* TS handler */
+  	TSL_Timer_ISR();
     msTicks++;
 	if((msTicks%10) ==0){
 		gSystemFlags.ms10_flag =1;

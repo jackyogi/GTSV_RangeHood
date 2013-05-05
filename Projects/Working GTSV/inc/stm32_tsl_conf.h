@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file    stm32_tsl_conf_TOADAPT.h
+  * @file    Example01_STM32L15x_2k\inc\stm32_tsl_conf.h
   * @author  MCD Application Team
-  * @version V1.0.0
- * @date    Apri-2011
+  * @version V0.1.4
+  * @date    18-November-2011
   * @brief   STM32 Touch Sensing Library - This file is a template for the
   *          Charge-Transfer acquisition and must be adapted to your requirements.
   ******************************************************************************
@@ -16,7 +16,10 @@
   * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
   * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
   *
-  * <h2><center>&copy; COPYRIGHT 2010 STMicroelectronics</center></h2>
+  * FOR MORE INFORMATION PLEASE READ CAREFULLY THE LICENSE AGREEMENT FILE
+  * LOCATED IN THE ROOT DIRECTORY OF THIS FIRMWARE PACKAGE.
+  *
+  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
   ******************************************************************************
   */
 
@@ -66,8 +69,8 @@
 //           CH2   PA14  __/__|
 //           CH3   PA15  __/__|
 //
-// GROUP6    CH1   PB4  __/____
-//           CH2   PB5  __/__|
+// GROUP6    CH1   PB4  __/____ DO NOT USE DUE TO POOR SENSITIVITY
+//           CH2   PB5  __/__|  DO NOT USE DUE TO POOR SENSITIVITY
 //
 // GROUP7    CH1   PB12  __/____
 //           CH2   PB13  __/__|
@@ -96,13 +99,14 @@
 //
 // 1) MCU FAMILY SELECTION
 //
-// In this version of the Library only the STM32L15X devices are supported.
-// The below define must be always defined.
+// In this version of the Library only the STM32L15XX8 (64kb) or STM32L15XXB (128kb)
+// devices are supported.
+// Select only one line below to identify the device used.
 //
 //==============================================================================
 
-#define STM32L15X (1)  /**< Select this line if the STM32L15X devices are used */
-
+//#define STM32L15XX8_64K  (1)  /**< Select this line if the STM32L15XX8 (64Kb Flash) devices are used */
+//#define STM32L15XXB_128K (1)  /**< Select this line if the STM32L15XXB (128Kb Flash) devices are used */
 
 //==============================================================================
 //
@@ -121,7 +125,7 @@
 
 /** @addtogroup SCKeys_IOs
   * @{ */
-  
+
 //==============================================================================
 //
 // 3) SINGLE-CHANNEL KEYS DEFINITION FOR THE 1st BANK
@@ -135,13 +139,13 @@
 //
 //==============================================================================
 
-#define SCKEY_P1_KEY_COUNT  (0)
+#define SCKEY_P1_KEY_COUNT  (3)
 
-#define SCKEY_P1_CH   (0) /**< Possible values are CH1, CH2, CH3 and CH4 */
+#define SCKEY_P1_CH   (CH1) /**< Possible values are CH1, CH2, CH3 and CH4 */
 
-#define SCKEY_P1_A  (0)
-#define SCKEY_P1_B  (0)
-#define SCKEY_P1_C  (0)
+#define SCKEY_P1_A  (GROUP2)
+#define SCKEY_P1_B  (GROUP3)
+#define SCKEY_P1_C  (GROUP9)
 #define SCKEY_P1_D  (0)
 #define SCKEY_P1_E  (0)
 #define SCKEY_P1_F  (0)
@@ -221,7 +225,7 @@
 //
 //==============================================================================
 
-#define NUMBER_OF_MULTI_CHANNEL_KEYS  (1)  /**< Number of multi channel keys (value from 0 to 2) */
+#define NUMBER_OF_MULTI_CHANNEL_KEYS  (0)  /**< Number of multi channel keys (value from 0 to 2) */
 
 
 //==============================================================================
@@ -231,21 +235,20 @@
 // For all the electrodes composing the multi-channel key:
 //   Set the channel (must be different from the sampling capacitor channel)
 //   set the group
-// Define the type and the layout type
+// Define the type of the MCKey (wheel or slider)
 //
 //==============================================================================
 
 #if NUMBER_OF_MULTI_CHANNEL_KEYS > 0
 
-#define MCKEY1_A_CH  (CH1)      /**< Multi channel key 1: 1st channel port */
-#define MCKEY1_A     (GROUP2)   /**< Multi channel key 1: 1st channel mask */
-#define MCKEY1_B_CH  (CH1)      /**< Multi channel key 1: 2nd channel port */
-#define MCKEY1_B     (GROUP9)   /**< Multi channel key 1: 2nd channel mask */
-#define MCKEY1_C_CH  (CH1)      /**< Multi channel key 1: 3rd channel port */
-#define MCKEY1_C     (GROUP3)   /**< Multi channel key 1: 3rd channel mask */
+#define MCKEY1_A_CH  (CH3)      /**< Multi channel key 1: 1st channel port */
+#define MCKEY1_A     (GROUP3)   /**< Multi channel key 1: 1st channel mask */
+#define MCKEY1_B_CH  (CH3)      /**< Multi channel key 1: 2nd channel port */
+#define MCKEY1_B     (GROUP2)   /**< Multi channel key 1: 2nd channel mask */
+#define MCKEY1_C_CH  (CH3)      /**< Multi channel key 1: 3rd channel port */
+#define MCKEY1_C     (GROUP4)   /**< Multi channel key 1: 3rd channel mask */
 
-#define MCKEY1_TYPE (1)         /**< Multi channel key 1 type: 0=wheel (zero between two electrodes), 1=slider (zero in the middle of one electrode) */
-#define MCKEY1_LAYOUT_TYPE (0)  /**< Multi channel key 1 layout type: 0=interlaced, 1=normal */
+#define MCKEY1_TYPE (0)         /**< Multi channel key 1 type: 0=wheel (zero between two electrodes), 1=slider (zero in the middle of one electrode) */
 
 #endif
 
@@ -257,7 +260,7 @@
 // For all the electrodes composing the multi-channel key:
 //   Set the channel (must be different from the sampling capacitor channel)
 //   set the group
-// Define the type and the layout type
+// Define the type of the MCKey (wheel or slider)
 //
 //==============================================================================
 
@@ -265,13 +268,12 @@
 
 #define MCKEY2_A_CH   (CH1)        /**< Multi channel key 2: 1st channel port */
 #define MCKEY2_A      (GROUP2)     /**< Multi channel key 2: 1st channel mask */
-#define MCKEY2_B_CH   (CH2)        /**< Multi channel key 2: 2nd channel port */
+#define MCKEY2_B_CH   (CH1)        /**< Multi channel key 2: 2nd channel port */
 #define MCKEY2_B      (GROUP4)     /**< Multi channel key 2: 2nd channel mask */
-#define MCKEY2_C_CH   (CH3)        /**< Multi channel key 2: 3rd channel port */
+#define MCKEY2_C_CH   (CH1)        /**< Multi channel key 2: 3rd channel port */
 #define MCKEY2_C      (GROUP3)     /**< Multi channel key 2: 3rd channel mask */
 
 #define MCKEY2_TYPE (1)            /**< Multi channel key 2 type: 0=wheel (zero between two electrodes), 1=slider (zero in the middle of one electrode) */
-#define MCKEY2_LAYOUT_TYPE (0)     /**< Multi channel key 2 layout type: 0=interlaced, 1=normal */
 
 #endif
 
@@ -293,13 +295,13 @@
   * @{ */
 
 // Single-channel keys thresholds
-#define SCKEY_DETECTTHRESHOLD_DEFAULT                (8)  /**< Single channel key detection threshold (value from 1 to 127) */
-#define SCKEY_ENDDETECTTHRESHOLD_DEFAULT             (5)  /**< Single channel key end detection threshold (value from 1 to 127) */
+#define SCKEY_DETECTTHRESHOLD_DEFAULT                (99)  /**< Single channel key detection threshold (value from 1 to 127) */
+#define SCKEY_ENDDETECTTHRESHOLD_DEFAULT             (95)  /**< Single channel key end detection threshold (value from 1 to 127) */
 #define SCKEY_RECALIBRATIONTHRESHOLD_DEFAULT       (-10)  /**< Single channel key calibration threshold (value from -1 to -128) */
 
 // Single-channel keys Acquisition values limits
 #define SCKEY_MIN_ACQUISITION                       (50)  /**< Single channel key minimum acquisition value */
-#define SCKEY_MAX_ACQUISITION                     (3000)  /**< Single channel key maximum acquisition value */
+#define SCKEY_MAX_ACQUISITION                     (5288)  /**< Single channel key maximum acquisition value */
 
 /** @} SCKeys_Parameters */
 
@@ -307,13 +309,9 @@
   * @{ */
 
 // Multi-channel keys thresholds
-//#define MCKEY_DETECTTHRESHOLD_DEFAULT               (10)  /**< Multi channel key detection threshold (value from 1 to 127) */
-//#define MCKEY_ENDDETECTTHRESHOLD_DEFAULT            (5)  /**< Multi channel key end detection threshold (value from 1 to 127) */
-//#define MCKEY_RECALIBRATIONTHRESHOLD_DEFAULT       (-10)  /**< Multi channel key calibration threshold (value from -1 to -128) */
-
-#define MCKEY_DETECTTHRESHOLD_DEFAULT               (70)  /**< Multi channel key detection threshold (value from 1 to 127) */
-#define MCKEY_ENDDETECTTHRESHOLD_DEFAULT            (40)  /**< Multi channel key end detection threshold (value from 1 to 127) */
-#define MCKEY_RECALIBRATIONTHRESHOLD_DEFAULT       (-70)  /**< Multi channel key calibration threshold (value from -1 to -128) */
+#define MCKEY_DETECTTHRESHOLD_DEFAULT               (30)  /**< Multi channel key detection threshold (value from 1 to 127) */
+#define MCKEY_ENDDETECTTHRESHOLD_DEFAULT            (20)  /**< Multi channel key end detection threshold (value from 1 to 127) */
+#define MCKEY_RECALIBRATIONTHRESHOLD_DEFAULT       (-30)  /**< Multi channel key calibration threshold (value from -1 to -128) */
 
 // Multi-channel keys resolution
 #define MCKEY_RESOLUTION_DEFAULT                     (4)  /**< Multi channel key resolution (value from 1 to 8) */
@@ -364,16 +362,13 @@
 // Detection Timeout
 #define DTO_DEFAULT                        (0)  /**< 1s unit (value from 0 (= infinite!) to 255) */
 
-// Interrupt synchronisation
-#define IT_SYNC                            (1)  /**< Interrupt synchronisation. (=1) Allow to synchronize the aquisition with a flag set in an interrupt routine */
-
-// IO Protection from Interrupt modification
-#define PROTECT_IO_ACCESS                  (1)  /**< Protect the IO access : to be enabled to allow the access to the IO registers used by the STM Touch library by any interrupt routine */
+// IOs protection from Interrupt modification
+#define PROTECT_IO_ACCESS                  (1)  /**< IOs protection from Interrupt modification: When enabled (=1), the interruptions are disabled when the IOs are written during the acquisition sequence */
 
 // Capacitance Loading Waiting HIGH Time Adjustment
-#define CLWHTA                        (1)  /**< Add here the necessary number of NOP */
+#define CLWHTA                             (1)  /**< Waiting time during capacitor charging: value from 0 to 50 (= 1.56µs @ 32MHz) */
 // Capacitance Loading Waiting LOW Time Adjustment
-#define CLWLTA                        (1)  /**< Add here the necessary number of NOP */
+#define CLWLTA                             (1)  /**< Waiting time during transfer phase: value from 0 to 50 (= 1.56µs @ 32MHz) */
 
 // Spread spectrum
 #define SPREAD_SPECTRUM                    (0)  /**< Spread spectrum enabled (=1) */
@@ -383,14 +378,12 @@
 
 // Active Shield
 #define ACTIVE_SHIELD_GROUP                (0)  /**< Active Shield is disabled (=0), else this symbolic constant contains the group dedicated to this function, this group will be driven but never acquired */
-
-// RTOS Management of the acquisition (instead of the timebase interrupt sub-routine
-#define RTOS_MANAGEMENT                    (0)  /**< The Timebase routine is launched by the application instead to be managed through a timebase interrupt routine */
+#define ACTIVE_SHIELD_CHANNEL              (0)  /**< Active Shield channel: CH1 to CH4 to select the channel or '0' to select all the pins of the group */
 
 // Timer Callback to allow the user to add its own function called from the timer interrupt sub-routine
 #define TIMER_CALLBACK                     (0)  /**< if (1) Allows the use of a callback function in the timer interrupt. This function will be called every 0.5ms. The callback function must be defined inside the application and have the following prototype FAR void USER_TickTimerCallback(void); */
 
-//Inline functions
+// Inline functions
 #define USE_INLINED_FUNCTIONS              (1)  /**< Inline functions are enabled (=1) */
 
 /** @} Common_Parameters */
@@ -404,6 +397,10 @@
 //
 //==============================================================================
 
+// The Charge-Transfer acquisition is the only acquisition principle supported
+// in this version of the Library and must be always defined.
+#define CHARGE_TRANSFER (1)
+
 // Automatic Calibration always enabled
 #define NEGDETECT_AUTOCAL (1)
 
@@ -411,4 +408,4 @@
 
 #endif /* __TSL_CONF_H */
 
-/******************* (C) COPYRIGHT 2010 STMicroelectronics *****END OF FILE****/
+/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

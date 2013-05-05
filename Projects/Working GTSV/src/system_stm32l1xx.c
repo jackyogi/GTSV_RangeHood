@@ -5,7 +5,7 @@
   * @version V1.0.0
   * @date    Apri-2011
   * @brief   CMSIS Cortex-M3 Device Peripheral Access Layer System Source File.
-  ******************************************************************************  
+  ******************************************************************************
   *
   * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
   * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
@@ -24,8 +24,8 @@
 
 /** @addtogroup stm32l1xx_system
   * @{
-  */  
-  
+  */
+
 /** @addtogroup STM32L1xx_System_Private_Includes
   * @{
   */
@@ -51,28 +51,28 @@
 
 /*!< Uncomment the line corresponding to the desired System clock (SYSCLK)
    frequency (after reset the MSI is used as SYSCLK source)
-   
+
    IMPORTANT NOTE:
-   ============== 
+   ==============
    1. After each device reset the MSI is used as System clock source.
 
    2. Please make sure that the selected System clock doesn't exceed your device's
       maximum frequency.
-      
-   3. If none of the define below is enabled, the MSI (2MHz default) is used as 
+
+   3. If none of the define below is enabled, the MSI (2MHz default) is used as
       System clock source.
 
    4. The System clock configuration functions provided within this file assume that:
-        - For Ultra Low Power Medium Mensity devices an external 8MHz crystal is 
+        - For Ultra Low Power Medium Mensity devices an external 8MHz crystal is
           used to drive the System clock.
      If you are using different crystal you have to adapt those functions accordingly.
     */
-    
+
 //#define SYSCLK_FREQ_MSI
 
 #ifndef SYSCLK_FREQ_MSI
-#define SYSCLK_FREQ_HSI    HSI_VALUE 
-/* #define SYSCLK_FREQ_HSE    HSE_VALUE */ 
+#define SYSCLK_FREQ_HSI    HSI_VALUE
+/* #define SYSCLK_FREQ_HSE    HSE_VALUE */
 /* #define SYSCLK_FREQ_4MHz   4000000 */
 /* #define SYSCLK_FREQ_8MHz   8000000 */
 /* #define SYSCLK_FREQ_16MHz  16000000 */
@@ -140,7 +140,7 @@ extern   uint16_t Int_CurrentSTBY;
 #elif defined SYSCLK_FREQ_MSI_4MHz
   uint32_t SystemCoreClock         = SYSCLK_FREQ_MSI_4MHz;   /*!< System Clock Frequency (Core Clock) */
 #else
-  uint32_t SystemCoreClock         = MSI_VALUE;              /*!< System Clock Frequency (Core Clock) */ 
+  uint32_t SystemCoreClock         = MSI_VALUE;              /*!< System Clock Frequency (Core Clock) */
 #endif
 #endif
 
@@ -161,7 +161,7 @@ static void SetSysClock(void);
 #ifdef SYSCLK_FREQ_HSI
   static void SetSysClockToHSI(void);
 #elif defined SYSCLK_FREQ_HSE
-  static void SetSysClockToHSE(void);  
+  static void SetSysClockToHSE(void);
 #elif defined SYSCLK_FREQ_4MHz
   static void SetSysClockTo4(void);
 #elif defined SYSCLK_FREQ_8MHz
@@ -169,7 +169,7 @@ static void SetSysClock(void);
 #elif defined SYSCLK_FREQ_16MHz
   static void SetSysClockTo16(void);
 #elif defined SYSCLK_FREQ_32MHz
-  static void SetSysClockTo32(void);  
+  static void SetSysClockTo32(void);
 #else
   static void SetSysClockToMSI(void);
 #endif
@@ -184,7 +184,7 @@ static void SetSysClock(void);
 
 /**
   * @brief  Setup the microcontroller system
-  *         Initialize the Embedded Flash Interface, the PLL and update the 
+  *         Initialize the Embedded Flash Interface, the PLL and update the
   *         SystemCoreClock variable
   * @note   This function should be used only after reset.
   * @param  None
@@ -192,14 +192,13 @@ static void SetSysClock(void);
   */
 void SystemInit (void)
 {
-  
-    GPIO_InitTypeDef GPIO_InitStructure;
+
   /*!< Set MSION bit */
   RCC->CR |= (uint32_t)0x00000100;
 
   /*!< Reset SW[1:0], HPRE[3:0], PPRE1[2:0], PPRE2[2:0], MCOSEL[2:0] and MCOPRE[2:0] bits */
   RCC->CFGR &= (uint32_t)0x88FFC00C;
-  
+
   /*!< Reset HSION, HSEON, CSSON and PLLON bits */
   RCC->CR &= (uint32_t)0xEEFEFFFE;
 
@@ -212,12 +211,12 @@ void SystemInit (void)
   /*!< Disable all interrupts */
   RCC->CIR = 0x00000000;
 
- 
+
   /*!< Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers */
   /*!< Configure the Flash Latency cycles and enable prefetch buffer */
   SetSysClock();
-     
-    
+
+
 }
 
 /**
@@ -232,7 +231,7 @@ void SystemCoreClockUpdate (void)
 
   /* Get SYSCLK source -------------------------------------------------------*/
   tmp = RCC->CFGR & RCC_CFGR_SWS;
-  
+
   switch (tmp)
   {
     case 0x00:  /* MSI used as system clock */
@@ -251,7 +250,7 @@ void SystemCoreClockUpdate (void)
       plldiv = RCC->CFGR & RCC_CFGR_PLLDIV;
       pllmul = PLLMulTable[(pllmul >> 18)];
       plldiv = (plldiv >> 22) + 1;
-      
+
       pllsource = RCC->CFGR & RCC_CFGR_PLLSRC;
 
       if (pllsource == 0x00)
@@ -287,7 +286,7 @@ static void SetSysClock(void)
 #ifdef SYSCLK_FREQ_HSI
   SetSysClockToHSI();
 #elif defined SYSCLK_FREQ_HSE
-  SetSysClockToHSE();  
+  SetSysClockToHSE();
 #elif defined SYSCLK_FREQ_4MHz
   SetSysClockTo4();
 #elif defined SYSCLK_FREQ_8MHz
@@ -295,13 +294,13 @@ static void SetSysClock(void)
 #elif defined SYSCLK_FREQ_16MHz
   SetSysClockTo16();
 #elif defined SYSCLK_FREQ_32MHz
-  SetSysClockTo32();  
+  SetSysClockTo32();
 #else
   SetSysClockToMSI();
 #endif
- 
- /* If none of the define above is enabled, the MSI (2MHz default) is used as 
-    System clock source (default after reset) */ 
+
+ /* If none of the define above is enabled, the MSI (2MHz default) is used as
+    System clock source (default after reset) */
 }
 
 #ifdef SYSCLK_FREQ_HSI
@@ -315,16 +314,16 @@ static void SetSysClock(void)
 static void SetSysClockToHSI(void)
 {
   __IO uint32_t StartUpCounter = 0, HSIStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable HSI */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable HSI */
   RCC->CR |= ((uint32_t)RCC_CR_HSION);
- 
+
   /* Wait till HSI is ready and if Time out is reached exit */
   do
   {
     HSIStatus = RCC->CR & RCC_CR_HSIRDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSIStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSIRDY) != RESET)
@@ -334,42 +333,42 @@ static void SetSysClockToHSI(void)
   else
   {
     HSIStatus = (uint32_t)0x00;
-  }  
-    
+  }
+
   if (HSIStatus == (uint32_t)0x01)
-  { 
+  {
     /* Enable 64-bit access */
     FLASH->ACR |= FLASH_ACR_ACC64;
-    
+
     /* Enable Prefetch Buffer */
-    FLASH->ACR |= FLASH_ACR_PRFTEN;    
+    FLASH->ACR |= FLASH_ACR_PRFTEN;
 
     /* Flash 1 wait state */
     FLASH->ACR |= FLASH_ACR_LATENCY;
 
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 1 (1.8V) */
     PWR->CR = PWR_CR_VOS_0;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
-    }     
-      
+    }
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
-    
+
     /* Select HSI as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSI;
 
     /* Wait till HSI is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x04)
@@ -377,9 +376,9 @@ static void SetSysClockToHSI(void)
     }
   }
   else
-  { 
-    /* If HSI fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
+  {
+    /* If HSI fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
   }
 }
 
@@ -394,16 +393,16 @@ static void SetSysClockToHSI(void)
 static void SetSysClockToHSE(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable HSE */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable HSE */
   RCC->CR |= ((uint32_t)RCC_CR_HSEON);
- 
+
   /* Wait till HSE is ready and if Time out is reached exit */
   do
   {
     HSEStatus = RCC->CR & RCC_CR_HSERDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSERDY) != RESET)
@@ -413,42 +412,42 @@ static void SetSysClockToHSE(void)
   else
   {
     HSEStatus = (uint32_t)0x00;
-  }  
-  
+  }
+
   if (HSEStatus == (uint32_t)0x01)
-  { 
+  {
     /* Flash 0 wait state */
     FLASH->ACR &= ~FLASH_ACR_LATENCY;
-    
+
     /* Disable Prefetch Buffer */
-    FLASH->ACR &= ~FLASH_ACR_PRFTEN;    
+    FLASH->ACR &= ~FLASH_ACR_PRFTEN;
 
     /* Disable 64-bit access */
     FLASH->ACR &= ~FLASH_ACR_ACC64;
-    
+
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 2 (1.5V) */
     PWR->CR = PWR_CR_VOS_1;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
-    }    
-        
+    }
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
-    
+
     /* Select HSE as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSE;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSE;
 
     /* Wait till HSE is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x08)
@@ -456,14 +455,14 @@ static void SetSysClockToHSE(void)
     }
   }
   else
-  { 
-    /* If HSE fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
-  }  
+  {
+    /* If HSE fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
+  }
 }
 #elif defined SYSCLK_FREQ_4MHz
 /**
-  * @brief  Sets System clock frequency to 4MHz and configure HCLK, PCLK2 
+  * @brief  Sets System clock frequency to 4MHz and configure HCLK, PCLK2
   *         and PCLK1 prescalers.
   * @note   This function should be used only after reset.
   * @param  None
@@ -472,16 +471,16 @@ static void SetSysClockToHSE(void)
 static void SetSysClockTo4(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable HSE */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable HSE */
   RCC->CR |= ((uint32_t)RCC_CR_HSEON);
- 
+
   /* Wait till HSE is ready and if Time out is reached exit */
   do
   {
     HSEStatus = RCC->CR & RCC_CR_HSERDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSERDY) != RESET)
@@ -491,42 +490,42 @@ static void SetSysClockTo4(void)
   else
   {
     HSEStatus = (uint32_t)0x00;
-  }  
-  
+  }
+
   if (HSEStatus == (uint32_t)0x01)
-  { 
+  {
     /* Flash 0 wait state */
     FLASH->ACR &= ~FLASH_ACR_LATENCY;
-    
+
     /* Disable Prefetch Buffer */
-    FLASH->ACR &= ~FLASH_ACR_PRFTEN;    
+    FLASH->ACR &= ~FLASH_ACR_PRFTEN;
 
     /* Disable 64-bit access */
     FLASH->ACR &= ~FLASH_ACR_ACC64;
-    
+
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 2 (1.5V) */
     PWR->CR = PWR_CR_VOS_1;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
-    } 
-        
+    }
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV2;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
-        
+
     /* Select HSE as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSE;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSE;
 
     /* Wait till HSE is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x08)
@@ -534,16 +533,16 @@ static void SetSysClockTo4(void)
     }
   }
   else
-  { 
-    /* If HSE fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
-  } 
+  {
+    /* If HSE fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
+  }
 }
 
 #elif defined SYSCLK_FREQ_8MHz
 /**
-  * @brief  Sets System clock frequency to 8MHz and configure HCLK, PCLK2 
-  *         and PCLK1 prescalers. 
+  * @brief  Sets System clock frequency to 8MHz and configure HCLK, PCLK2
+  *         and PCLK1 prescalers.
   * @note   This function should be used only after reset.
   * @param  None
   * @retval None
@@ -551,16 +550,16 @@ static void SetSysClockTo4(void)
 static void SetSysClockTo8(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable HSE */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable HSE */
   RCC->CR |= ((uint32_t)RCC_CR_HSEON);
- 
+
   /* Wait till HSE is ready and if Time out is reached exit */
   do
   {
     HSEStatus = RCC->CR & RCC_CR_HSERDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSERDY) != RESET)
@@ -570,42 +569,42 @@ static void SetSysClockTo8(void)
   else
   {
     HSEStatus = (uint32_t)0x00;
-  }  
-  
+  }
+
   if (HSEStatus == (uint32_t)0x01)
-  { 
+  {
     /* Flash 0 wait state */
     FLASH->ACR &= ~FLASH_ACR_LATENCY;
-    
+
     /* Disable Prefetch Buffer */
-    FLASH->ACR &= ~FLASH_ACR_PRFTEN;    
+    FLASH->ACR &= ~FLASH_ACR_PRFTEN;
 
     /* Disable 64-bit access */
     FLASH->ACR &= ~FLASH_ACR_ACC64;
-    
+
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 2 (1.5V) */
     PWR->CR = PWR_CR_VOS_1;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
-    }    
-    
+    }
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
-        
+
     /* Select HSE as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSE;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_HSE;
 
     /* Wait till HSE is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x08)
@@ -613,16 +612,16 @@ static void SetSysClockTo8(void)
     }
   }
   else
-  { 
-    /* If HSE fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
-  } 
+  {
+    /* If HSE fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
+  }
 }
 
 #elif defined SYSCLK_FREQ_16MHz
 /**
-  * @brief  Sets System clock frequency to 16MHz and configure HCLK, PCLK2 
-  *         and PCLK1 prescalers. 
+  * @brief  Sets System clock frequency to 16MHz and configure HCLK, PCLK2
+  *         and PCLK1 prescalers.
   * @note   This function should be used only after reset.
   * @param  None
   * @retval None
@@ -630,16 +629,16 @@ static void SetSysClockTo8(void)
 static void SetSysClockTo16(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable HSE */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable HSE */
   RCC->CR |= ((uint32_t)RCC_CR_HSEON);
- 
+
   /* Wait till HSE is ready and if Time out is reached exit */
   do
   {
     HSEStatus = RCC->CR & RCC_CR_HSERDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSERDY) != RESET)
@@ -649,36 +648,36 @@ static void SetSysClockTo16(void)
   else
   {
     HSEStatus = (uint32_t)0x00;
-  }  
-  
+  }
+
   if (HSEStatus == (uint32_t)0x01)
-  { 
+  {
     /* Enable 64-bit access */
     FLASH->ACR |= FLASH_ACR_ACC64;
-    
+
     /* Enable Prefetch Buffer */
-    FLASH->ACR |= FLASH_ACR_PRFTEN;    
+    FLASH->ACR |= FLASH_ACR_PRFTEN;
 
     /* Flash 1 wait state */
-    FLASH->ACR |= FLASH_ACR_LATENCY; 
-    
+    FLASH->ACR |= FLASH_ACR_LATENCY;
+
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 2 (1.5V) */
     PWR->CR = PWR_CR_VOS_1;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
-    }    
-    
+    }
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV2;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
 
@@ -694,10 +693,10 @@ static void SetSysClockTo16(void)
     while((RCC->CR & RCC_CR_PLLRDY) == 0)
     {
     }
-        
+
     /* Select PLL as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;
 
     /* Wait till PLL is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x0C)
@@ -705,16 +704,16 @@ static void SetSysClockTo16(void)
     }
   }
   else
-  { 
-    /* If HSE fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
-  } 
+  {
+    /* If HSE fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
+  }
 }
 
 #elif defined SYSCLK_FREQ_32MHz
 /**
-  * @brief  Sets System clock frequency to 32MHz and configure HCLK, PCLK2 
-  *         and PCLK1 prescalers. 
+  * @brief  Sets System clock frequency to 32MHz and configure HCLK, PCLK2
+  *         and PCLK1 prescalers.
   * @note   This function should be used only after reset.
   * @param  None
   * @retval None
@@ -722,16 +721,16 @@ static void SetSysClockTo16(void)
 static void SetSysClockTo32(void)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable HSE */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable HSE */
   RCC->CR |= ((uint32_t)RCC_CR_HSEON);
- 
+
   /* Wait till HSE is ready and if Time out is reached exit */
   do
   {
     HSEStatus = RCC->CR & RCC_CR_HSERDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSERDY) != RESET)
@@ -741,36 +740,36 @@ static void SetSysClockTo32(void)
   else
   {
     HSEStatus = (uint32_t)0x00;
-  }  
+  }
 
   if (HSEStatus == (uint32_t)0x01)
-  { 
+  {
     /* Enable 64-bit access */
     FLASH->ACR |= FLASH_ACR_ACC64;
-    
+
     /* Enable Prefetch Buffer */
-    FLASH->ACR |= FLASH_ACR_PRFTEN;    
+    FLASH->ACR |= FLASH_ACR_PRFTEN;
 
     /* Flash 1 wait state */
-    FLASH->ACR |= FLASH_ACR_LATENCY; 
-    
+    FLASH->ACR |= FLASH_ACR_LATENCY;
+
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 1 (1.8V) */
     PWR->CR = PWR_CR_VOS_0;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
-    }    
-    
+    }
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
 
@@ -786,10 +785,10 @@ static void SetSysClockTo32(void)
     while((RCC->CR & RCC_CR_PLLRDY) == 0)
     {
     }
-        
+
     /* Select PLL as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_PLL;
 
     /* Wait till PLL is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x0C)
@@ -797,10 +796,10 @@ static void SetSysClockTo32(void)
     }
   }
   else
-  { 
-    /* If HSE fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
-  } 
+  {
+    /* If HSE fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
+  }
 }
 
 #else
@@ -814,16 +813,16 @@ static void SetSysClockTo32(void)
 static void SetSysClockToMSI(void)
 {
   __IO uint32_t StartUpCounter = 0, MSIStatus = 0;
-  
-  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/    
-  /* Enable MSI */    
+
+  /* SYSCLK, HCLK, PCLK2 and PCLK1 configuration ---------------------------*/
+  /* Enable MSI */
   RCC->CR |= ((uint32_t)RCC_CR_MSION);
- 
+
   /* Wait till MSI is ready and if Time out is reached exit */
   do
   {
     MSIStatus = RCC->CR & RCC_CR_MSIRDY;
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((MSIStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_MSIRDY) != RESET)
@@ -833,26 +832,26 @@ static void SetSysClockToMSI(void)
   else
   {
     MSIStatus = (uint32_t)0x00;
-  }  
-  
+  }
+
   if (MSIStatus == (uint32_t)0x01)
-  { 
+  {
 #ifdef SYSCLK_FREQ_MSI
 #ifdef SYSCLK_FREQ_MSI_4MHz
     /* Enable 64-bit access */
     FLASH->ACR |= FLASH_ACR_ACC64;
-    
+
     /* Enable Prefetch Buffer */
-    FLASH->ACR |= FLASH_ACR_PRFTEN;    
+    FLASH->ACR |= FLASH_ACR_PRFTEN;
 
     /* Flash 1 wait state */
-    FLASH->ACR |= FLASH_ACR_LATENCY; 
+    FLASH->ACR |= FLASH_ACR_LATENCY;
 #else
     /* Flash 0 wait state */
     FLASH->ACR &= ~FLASH_ACR_LATENCY;
-    
+
     /* Disable Prefetch Buffer */
-    FLASH->ACR &= ~FLASH_ACR_PRFTEN;    
+    FLASH->ACR &= ~FLASH_ACR_PRFTEN;
 
     /* Disable 64-bit access */
     FLASH->ACR &= ~FLASH_ACR_ACC64;
@@ -860,21 +859,21 @@ static void SetSysClockToMSI(void)
 #endif
     /* Enable the PWR APB1 Clock */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-  
+
     /* Select the Voltage Range 3 (1.2V) */
     PWR->CR = PWR_CR_VOS;
-  
+
     /* Wait Until the Voltage Regulator is ready */
     while((PWR->CSR & PWR_CSR_VOSF) != RESET)
     {
     }
-    
+
     /* HCLK = SYSCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-      
+
     /* PCLK2 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
-    
+
     /* PCLK1 = HCLK */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV1;
 
@@ -882,14 +881,14 @@ static void SetSysClockToMSI(void)
   #ifdef SYSCLK_FREQ_MSI_64KHz
     /* Set MSI clock range */
     RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));
-    RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_64KHz;   
+    RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_64KHz;
   #elif defined SYSCLK_FREQ_MSI_128KHz
     /* Set MSI clock range */
     RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));
-    RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_128KHz; 
+    RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_128KHz;
   #elif defined SYSCLK_FREQ_MSI_256KHz
     /* Set MSI clock range */
-    RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));    
+    RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));
     RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_256KHz;
   #elif defined SYSCLK_FREQ_MSI_512KHz
     /* Set MSI clock range */
@@ -901,18 +900,18 @@ static void SetSysClockToMSI(void)
     RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_1MHz;
   #elif defined SYSCLK_FREQ_MSI_2MHz
     /* Set MSI clock range */
-    RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));    
+    RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));
     RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_2MHz;
-  #elif defined SYSCLK_FREQ_MSI_4MHz     
+  #elif defined SYSCLK_FREQ_MSI_4MHz
     /* Set MSI clock range */
-    RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));    
-    RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_4MHz;                                
+    RCC->ICSCR &= (uint32_t)((uint32_t)~(RCC_ICSCR_MSIRANGE));
+    RCC->ICSCR |= (uint32_t)RCC_ICSCR_MSIRANGE_4MHz;
   #endif
-#endif    
-    
+#endif
+
     /* Select MSI as system clock source */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
-    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_MSI;    
+    RCC->CFGR |= (uint32_t)RCC_CFGR_SW_MSI;
 
     /* Wait till MSI is used as system clock source */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS) != (uint32_t)0x00)
@@ -920,9 +919,9 @@ static void SetSysClockToMSI(void)
     }
   }
   else
-  { 
-    /* If MSI fails to start-up, the application will have wrong clock 
-       configuration. User can add here some code to deal with this error */    
+  {
+    /* If MSI fails to start-up, the application will have wrong clock
+       configuration. User can add here some code to deal with this error */
   }
 }
 #endif
@@ -934,9 +933,9 @@ static void SetSysClockToMSI(void)
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-    
+
 /******************* (C) COPYRIGHT 2010 STMicroelectronics *****END OF FILE****/

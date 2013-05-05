@@ -27,6 +27,8 @@
 #include "stm32l1xx.h"
 #include "GTSV_BlackControl_board.h"
 #include "GTSV_BlackControl_lcd.h"
+#include "stm32_tsl_api.h"
+
 #include <stdio.h>
 
 /* Exported types ------------------------------------------------------------*/
@@ -109,7 +111,9 @@ void Timers_to_default_config(void);
 void Buzzer_bip(void);
 void Buzzer_bip_ms(uint16_t ms);
 
+void Gtsv_main_loop(void);
 
+void Enable_touch_keys(void);
 
 
 #endif /* __MAIN_H */

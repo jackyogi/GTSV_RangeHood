@@ -54,6 +54,10 @@ TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 
 
 
+#define KEY_MINUS_DETECTED (sSCKeyInfo[0].Setting.b.DETECTED)
+#define KEY_AUTO_DETECTED (sSCKeyInfo[1].Setting.b.DETECTED)
+#define KEY_PLUS_DETECTED (sSCKeyInfo[2].Setting.b.DETECTED)
+
 
 
 
@@ -107,10 +111,59 @@ int main(void)
 
 	Irr_init();
 	
-  
+	// Enable Comparator clock
+  	RCC_APB1PeriphClockCmd(RCC_APB1Periph_COMP, ENABLE);
+	/* Init TSL RC */
+	TSL_Init();
+  	Enable_touch_keys();
+  	
   /*Until application reset*/
   while (1)
   {
+	
+	/* Run TSL RC state machine */
+	  TSL_Action();
+	  if(KEY_AUTO_DETECTED){
+		Buzzer_bip();
+	  }
+	  if(KEY_MINUS_DETECTED){
+		Buzzer_bip();
+	  }
+	  if(KEY_PLUS_DETECTED){
+		Buzzer_bip();
+	  }
+
+  }
+}
+
+
+/**
+  ******************************************************************************
+  * @brief  Initialize all the keys (implemented, enabled and DxS group)
+  * @param  None
+  * @retval None
+  ******************************************************************************
+  */
+void Enable_touch_keys(void)
+{
+  uint8_t i;
+
+  // All keys are implemented and enabled
+  // All keys are on the same DxSGroup (write 0 to disable the DxS)
+
+#if NUMBER_OF_SINGLE_CHANNEL_KEYS > 0
+  for (i = 0; i < NUMBER_OF_SINGLE_CHANNEL_KEYS; i++)
+  {
+    sSCKeyInfo[i].Setting.b.IMPLEMENTED = 1;
+    sSCKeyInfo[i].Setting.b.ENABLED = 1;
+    sSCKeyInfo[i].DxSGroup = 0x01;
+  }
+#endif
+
+}
+
+void Gtsv_main_loop(void)
+{
 	if(Irr_decode(&irr_decode_results)){
 		
 		if(irr_decode_results.value == IRR_NEC_REPEAT){
@@ -193,9 +246,8 @@ int main(void)
 
 	
 	LCD_UpdateDisplayRequest();
-
-  }
 }
+
 
 void Cpu_to_default_config(void)
 {
