@@ -1008,6 +1008,12 @@
       <name>$PROJ_DIR$\..\src\GTSV_RH_RTC_config.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\src\GTSV_Time_tick.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\GTSV_Time_tick.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\src\GTSV_TSense.c</name>
     </file>
     <file>
