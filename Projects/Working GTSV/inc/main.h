@@ -81,6 +81,7 @@ struct SystemFlags {
 	uint8_t  blower_fan_speed;
 	enum System_state_enum_t sys_state;
 	RTC_TimeTypeDef blower_apo_begin;
+	RTC_TimeTypeDef blower_apo_end;
 	
 	
 };
@@ -161,6 +162,8 @@ void Timers_to_default_config(void);
 void Irr_main_loop(void);
 
 void Blower_set_speed(uint8_t spd);
+void auto_power_off_check_time(void);
+
 
 #endif /* __MAIN_H */
 

@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-1538874748
+Checksum=1312003642
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -57,8 +57,10 @@ Fmt6=RTC_TimeTypeDef-RTC_H12	3	0
 Fmt7=RTC_TimeTypeDef-RTC_Hours	3	0
 Fmt8=RTC_TimeTypeDef-RTC_Minutes	3	0
 Fmt9=RTC_TimeTypeDef-RTC_Seconds	3	0
-Fmt10=struct irr_decode_results_t-value	4	0
-Fmt11=struct irr_decode_results_t-value_bit_len	4	0
+Fmt10=struct <Unnamed 41>-DetectThreshold	3	0
+Fmt11=struct <Unnamed 41>-EndDetectThreshold	3	0
+Fmt12=struct irr_decode_results_t-value	4	0
+Fmt13=struct irr_decode_results_t-value_bit_len	4	0
 [array_types]
 Fmt0=uint32_t[8]	1	0
 [watch_formats]
@@ -68,12 +70,13 @@ Fmt2={W}42:_lcd_blink_cursor	3	0
 Fmt3={W}42:_lcd_fan_cursor_fast	3	0
 Fmt4={W}42:_lcd_fan_cursor_slow	3	0
 Fmt5={W}42:cnt_50ms	3	0
-Fmt6={W}42:hours	3	0
-Fmt7={W}42:mins	3	0
-Fmt8={W}42:num	3	0
-Fmt9={W}42:pos	3	0
-Fmt10={W}42:tmp_ir_cmd	4	0
-Fmt11={W}42:tmp_results	4	0
+Fmt6={W}42:gSystemFlags.blower_apo_mins_tmp	3	0
+Fmt7={W}42:hours	3	0
+Fmt8={W}42:mins	3	0
+Fmt9={W}42:num	3	0
+Fmt10={W}42:pos	3	0
+Fmt11={W}42:tmp_ir_cmd	4	0
+Fmt12={W}42:tmp_results	4	0
 [DataLog]
 LogEnabled=0
 SumEnabled=0
@@ -95,6 +98,9 @@ Count=0
 LoggingEnabled=_ 0
 LogFile=_ ""
 Category=_ 0
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
 [Aliases]
 Count=0
 SuppressDialog=0
@@ -118,6 +124,3 @@ Mode=3
 Graph=0
 Symbiont=0
 Exclusions=
-[TermIOLog]
-LoggingEnabled=_ 0
-LogFile=_ ""

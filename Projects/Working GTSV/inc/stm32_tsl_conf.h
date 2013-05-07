@@ -295,8 +295,8 @@
   * @{ */
 
 // Single-channel keys thresholds
-#define SCKEY_DETECTTHRESHOLD_DEFAULT                (88)  /**< Single channel key detection threshold (value from 1 to 127) */
-#define SCKEY_ENDDETECTTHRESHOLD_DEFAULT             (86)  /**< Single channel key end detection threshold (value from 1 to 127) */
+#define SCKEY_DETECTTHRESHOLD_DEFAULT                (68)  /**< Single channel key detection threshold (value from 1 to 127) */
+#define SCKEY_ENDDETECTTHRESHOLD_DEFAULT             (67)  /**< Single channel key end detection threshold (value from 1 to 127) */
 #define SCKEY_RECALIBRATIONTHRESHOLD_DEFAULT       (-10)  /**< Single channel key calibration threshold (value from -1 to -128) */
 
 // Single-channel keys Acquisition values limits
@@ -349,7 +349,7 @@
   * @{ */
 
 // Integrators
-#define DETECTION_INTEGRATOR_DEFAULT       (1)  /**< Detection Integrator = Debounce Filter (value from 0 to 255) */
+#define DETECTION_INTEGRATOR_DEFAULT       (0)  /**< Detection Integrator = Debounce Filter (value from 0 to 255) */
 #define END_DETECTION_INTEGRATOR_DEFAULT   (0)  /**< End detection Integrator = Debounce Filter (from 0 to 255) */
 #define RECALIBRATION_INTEGRATOR_DEFAULT  (10)  /**< Calibration integrator (value from 1 to 255) */
 

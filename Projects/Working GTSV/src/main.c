@@ -76,98 +76,10 @@ void save_tmp_clock_and_change_to_OFF(void)
 	gSystemFlags.sys_state = SYS_STATE_OFF;
 	
 }
-/*******************************************************************************/
-/**
-  * @brief main entry point.
-  * @par Parameters None
-  * @retval void None
-  * @par Required preconditions: None
-  */
-int main(void)
+
+void main_big_switch(void)
 {
-
- /*!< At this stage the microcontroller clock setting is already configured,
-       this is done through SystemInit() function which is called from startup
-       file (startup_stm32l1xx_md.s) before to branch to application main.
-       To reconfigure the default setting of SystemInit() function, refer to
-       system_stm32l1xx.c file
-     */
-
-	/* Check if the StandBy flag is set */
-	if (PWR_GetFlagStatus(PWR_FLAG_SB) != RESET)
-	{
-		/* System resumed from STANDBY mode */
-		/* Clear StandBy flag */
-		//RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR,ENABLE);
-		//PWR_ClearFlag(PWR_FLAG_SB);
-		/* set StandbyWakeup indicator*/
-		//StanbyWakeUp = TRUE;
-	} else
-	{
-		/* Reset StandbyWakeup indicator*/
-		//StanbyWakeUp = FALSE;
-	}
-
-
-	Cpu_to_default_config();
-	RTC_to_default_config();
-	Ports_to_default_config();
-  	Lcd_to_default_config();
-	Timers_to_default_config();
-
-#ifdef DEBUG
-	//get system config for debug purposes
-	Get_system_clk_config();
-#endif
-
-	Irr_init();
-	
-	Tsense_to_default_config();
-	LED_BACKLIGHT = 1;
-  /*Until application reset*/
-  while (1)
-  {
-  	/* Run TSL RC state machine */
-	Tsense_action();
-	Tsense_key_detect_first();
-	
-	if(Irr_decode(&irr_decode_results)){
-		tmp_ir_cmd= irr_decode_results.value;
-
-		switch(tmp_ir_cmd){
-		case IRR_NEC_CMD_LIGHT:
-			Buzzer_bip();
-			break;
-
-		case IRR_NEC_CMD_TIMER:
-			
-			Buzzer_bip();
-			break;
-		case IRR_NEC_CMD_AUTO:
-		case IRR_NEC_CMD_ONOFF:
-
-			Buzzer_bip();
-			break;
-		case IRR_NEC_CMD_SPEEDDOWN:
-			Buzzer_bip();
-			break;
-		case IRR_NEC_CMD_SPEEDUP:
-			Buzzer_bip();
-			break;
-		default:
-			break;
-		};
-
-
-		Irr_resume();
-	}else {
-		tmp_ir_cmd=0;
-	}
-	
-
-
-	
-  	switch(gSystemFlags.sys_state){
+	switch(gSystemFlags.sys_state){
 	case SYS_STATE_OFF:
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
     		//RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
@@ -334,6 +246,8 @@ int main(void)
 			if(gSystemFlags.blower_fan_speed == 4){
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
+				LED_PLUS_BT = 0;
+				LED_MINUS_BT = 0;
 			}else{
 				Blower_set_speed(++gSystemFlags.blower_fan_speed);
 			}
@@ -345,6 +259,8 @@ int main(void)
 			if(gSystemFlags.blower_fan_speed == 1){
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
+				LED_PLUS_BT = 0;
+				LED_MINUS_BT = 0;
 			}else{
 				Blower_set_speed(--gSystemFlags.blower_fan_speed);
 			}
@@ -361,7 +277,7 @@ int main(void)
 			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
 			gSystemFlags.blower_apo_mins_tmp =1;
 			gSystemFlags.sys_state = SYS_STATE_BLOWING_APO_ADJ;
-			
+			gSystemFlags.time_adj_delay =0;
 		}
 
 		break;
@@ -385,6 +301,7 @@ int main(void)
 			Lcd_fill_hours(88);
 		}
 
+		//key plus
 		if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
 		    (Tsense_check_key_hold(TSENSE_KEY_PLUS) && gSystemFlags.ms500_flag) ||
 		    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
@@ -395,6 +312,7 @@ int main(void)
 			else
 				gSystemFlags.blower_apo_mins_tmp++;
 		}
+		//key minus
 		if(Tsense_check_rising_edge(TSENSE_KEY_MINUS)  ||
 		    (Tsense_check_key_hold(TSENSE_KEY_MINUS) && gSystemFlags.ms500_flag)||
 		    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
@@ -405,22 +323,39 @@ int main(void)
 			else
 				gSystemFlags.blower_apo_mins_tmp--;
 		}
+		//
 		if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
 			Tsense_check_high_level(TSENSE_KEY_MINUS)||
 			Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
 			Tsense_check_high_level(TSENSE_KEY_LIGHT)||
 			tmp_ir_cmd == IRR_NEC_CMD_LIGHT)
 			gSystemFlags.time_adj_delay =0;
-
+		//key Timer
 		if(Tsense_check_rising_edge(TSENSE_KEY_TIMER)|| 
 			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_icon_off(LCD_CLOCK_ICON);
 		}
+		//auto change to Blowing auto power off
 		if(gSystemFlags.time_adj_delay>133){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING_APO;
-			RTC_GetTime(RTC_Format_BIN, &(gSystemFlags.blower_apo_begin));
-			gSystemFlags.blower_apo_mins = gSystemFlags.blower_apo_mins_tmp;
+			//get current time
+			//RTC_GetTime(RTC_Format_BIN, &(gSystemFlags.blower_apo_begin));
+			RTC_GetTime(RTC_Format_BIN, &(gSystemFlags.blower_apo_end));
+			//calculate off time
+			if((gSystemFlags.blower_apo_end.RTC_Minutes + gSystemFlags.blower_apo_mins_tmp)<60){
+				gSystemFlags.blower_apo_end.RTC_Minutes += gSystemFlags.blower_apo_mins_tmp;
+			}else {
+				gSystemFlags.blower_apo_end.RTC_Minutes += gSystemFlags.blower_apo_mins_tmp -60;
+				if(gSystemFlags.blower_apo_begin.RTC_Hours<23)
+					gSystemFlags.blower_apo_end.RTC_Hours += 1;
+				else 
+					gSystemFlags.blower_apo_end.RTC_Hours = 0;
+				
+			}
+			
+			
+			
 		}
 		break;
 	case SYS_STATE_BLOWING_APO:
@@ -448,6 +383,9 @@ int main(void)
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
 				Lcd_icon_off(LCD_CLOCK_ICON);
+				LED_PLUS_BT = 0;
+				LED_MINUS_BT = 0;
+				LED_TIMER_BT =0;
 			}else{
 				Blower_set_speed(++gSystemFlags.blower_fan_speed);
 			}
@@ -460,6 +398,9 @@ int main(void)
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
 				Lcd_icon_off(LCD_CLOCK_ICON);
+				LED_PLUS_BT = 0;
+				LED_MINUS_BT = 0;
+				LED_TIMER_BT =0;
 			}else{
 				Blower_set_speed(--gSystemFlags.blower_fan_speed);
 			}
@@ -471,10 +412,126 @@ int main(void)
 			Blower_set_speed(0);
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
 			Lcd_icon_off(LCD_CLOCK_ICON);
+			LED_PLUS_BT = 0;
+			LED_MINUS_BT = 0;
+			LED_TIMER_BT =0;
+		}
+		//key timer
+		if(Tsense_check_rising_edge(TSENSE_KEY_TIMER)|| 
+			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+			Lcd_icon_off(LCD_CLOCK_ICON);
+		}
+
+		//check time off in systick
+		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+		if((RTC_TimeStructure.RTC_Seconds == gSystemFlags.blower_apo_end.RTC_Seconds) &&
+			(RTC_TimeStructure.RTC_Minutes == gSystemFlags.blower_apo_end.RTC_Minutes) &&
+			(RTC_TimeStructure.RTC_Hours == gSystemFlags.blower_apo_end.RTC_Hours)){
+			Buzzer_bip();
+			Blower_set_speed(0);
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+			Lcd_icon_off(LCD_CLOCK_ICON);
+			LED_PLUS_BT = 0;
+			LED_MINUS_BT = 0;
+			LED_TIMER_BT =0;
 		}
 		break;
 	
   	}
+}
+/*******************************************************************************/
+/**
+  * @brief main entry point.
+  * @par Parameters None
+  * @retval void None
+  * @par Required preconditions: None
+  */
+int main(void)
+{
+
+ /*!< At this stage the microcontroller clock setting is already configured,
+       this is done through SystemInit() function which is called from startup
+       file (startup_stm32l1xx_md.s) before to branch to application main.
+       To reconfigure the default setting of SystemInit() function, refer to
+       system_stm32l1xx.c file
+     */
+
+	/* Check if the StandBy flag is set */
+	if (PWR_GetFlagStatus(PWR_FLAG_SB) != RESET)
+	{
+		/* System resumed from STANDBY mode */
+		/* Clear StandBy flag */
+		//RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR,ENABLE);
+		//PWR_ClearFlag(PWR_FLAG_SB);
+		/* set StandbyWakeup indicator*/
+		//StanbyWakeUp = TRUE;
+	} else
+	{
+		/* Reset StandbyWakeup indicator*/
+		//StanbyWakeUp = FALSE;
+	}
+
+
+	Cpu_to_default_config();
+	RTC_to_default_config();
+	Ports_to_default_config();
+  	Lcd_to_default_config();
+	Timers_to_default_config();
+
+#ifdef DEBUG
+	//get system config for debug purposes
+	Get_system_clk_config();
+#endif
+
+	Irr_init();
+	
+	Tsense_to_default_config();
+	LED_BACKLIGHT = 1;
+  /*Until application reset*/
+  while (1)
+  {
+  	/* Run TSL RC state machine */
+	Tsense_action();
+	Tsense_key_detect_first();
+	
+	if(Irr_decode(&irr_decode_results)){
+		tmp_ir_cmd= irr_decode_results.value;
+
+		switch(tmp_ir_cmd){
+		case IRR_NEC_CMD_LIGHT:
+			Buzzer_bip();
+			break;
+
+		case IRR_NEC_CMD_TIMER:
+			
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_AUTO:
+		case IRR_NEC_CMD_ONOFF:
+
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_SPEEDDOWN:
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_SPEEDUP:
+			Buzzer_bip();
+			break;
+		default:
+			break;
+		};
+
+
+		Irr_resume();
+	}else {
+		tmp_ir_cmd=0;
+	}
+	
+
+	main_big_switch();
+	
+  	
 
 //for any SYS State 
 	if(Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
@@ -517,7 +574,21 @@ int main(void)
 
 
 
-
+void auto_power_off_check_time(void)
+{
+	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+	if((RTC_TimeStructure.RTC_Seconds == gSystemFlags.blower_apo_end.RTC_Seconds) &&
+		(RTC_TimeStructure.RTC_Minutes == gSystemFlags.blower_apo_end.RTC_Minutes) &&
+		(RTC_TimeStructure.RTC_Hours == gSystemFlags.blower_apo_end.RTC_Hours)){
+		Buzzer_bip();
+		Blower_set_speed(0);
+		gSystemFlags.sys_state = SYS_STATE_OFF;
+		Lcd_icon_off(LCD_CLOCK_ICON);
+		LED_PLUS_BT = 0;
+		LED_MINUS_BT = 0;
+		LED_TIMER_BT =0;
+	}
+}
 
 /*
 
@@ -693,7 +764,7 @@ void Ports_to_default_config(void)
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -702,7 +773,7 @@ void Ports_to_default_config(void)
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);

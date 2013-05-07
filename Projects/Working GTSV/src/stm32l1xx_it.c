@@ -140,6 +140,7 @@ void SysTick_Handler(void)
 {
 	/* TS handler */
   	TSL_Timer_ISR();
+
     msTicks++;
 	if((msTicks%10) ==0){
 		gSystemFlags.ms10_flag =1;
@@ -161,7 +162,8 @@ void SysTick_Handler(void)
 
 	//buzzer on/off timing
 	Buzzer_systickISR_timing_ms();
-
+	//if(gSystemFlags.sys_state == SYS_STATE_BLOWING_APO)
+		//auto_power_off_check_time();
 }
 
 

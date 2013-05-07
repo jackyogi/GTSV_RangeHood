@@ -53,6 +53,11 @@ void Tsense_key_detect_last(void)
 
 
 
+#define TS_KEY01	sSCKeyInfo[0]
+#define TS_KEY02	sSCKeyInfo[1]
+#define TS_KEY03	sSCKeyInfo[2]
+#define TS_KEY04	sSCKeyInfo[3]
+#define TS_KEY05	sSCKeyInfo[4]
 
 void Tsense_to_default_config(void)
 {
@@ -71,11 +76,27 @@ void Tsense_to_default_config(void)
 	}
 	#endif
 	// Change thresholds of specific keys
-	#if defined (KEY01)
-	  TS_KEY01.DetectThreshold = 99;
-	  TS_KEY01.EndDetectThreshold = 95;
-	  TS_KEY01.RecalibrationThreshold = -22;
-	#endif
+	/*
+	sSCKeyInfo[0].DetectThreshold = 99;
+	sSCKeyInfo[0].EndDetectThreshold = 96;
+	sSCKeyInfo[0].RecalibrationThreshold = -22;
+	  
+	sSCKeyInfo[1].DetectThreshold = 99;
+	sSCKeyInfo[1].EndDetectThreshold = 96;
+	sSCKeyInfo[1].RecalibrationThreshold = -22;
+	
+	sSCKeyInfo[2].DetectThreshold = 88;
+	sSCKeyInfo[2].EndDetectThreshold = 86;
+	sSCKeyInfo[2].RecalibrationThreshold = -22;
+
+	sSCKeyInfo[3].DetectThreshold = 99;
+	sSCKeyInfo[3].EndDetectThreshold = 96;
+	sSCKeyInfo[3].RecalibrationThreshold = -22;
+
+	sSCKeyInfo[4].DetectThreshold = 79;
+	sSCKeyInfo[4].EndDetectThreshold = 76;
+	sSCKeyInfo[4].RecalibrationThreshold = -22;
+	*/
 }
 
 void Tsense_action(void)
