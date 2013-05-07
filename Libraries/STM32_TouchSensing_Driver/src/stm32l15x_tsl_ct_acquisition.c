@@ -490,10 +490,17 @@
 #define SAMP_CAP_COMP1_MODER_MASK_B_OUT ((uint32_t)0x00000000)
 #endif
 #ifdef COMP2
-#define SAMP_CAP_COMP2_MASK_B     ((uint32_t)0x00000020)
-#define SAMP_CAP_COMP2_IO_MASK_B        ((uint32_t)0x00000020) /* PB5 */
-#define SAMP_CAP_COMP2_MODER_MASK_B     ((uint32_t)0x00000C00)
-#define SAMP_CAP_COMP2_MODER_MASK_B_OUT ((uint32_t)0x00000400)
+//jack changed here!!!!! 
+//#define SAMP_CAP_COMP2_MASK_B     ((uint32_t)0x00000020)
+//#define SAMP_CAP_COMP2_IO_MASK_B        ((uint32_t)0x00000020) /* PB5 */
+//#define SAMP_CAP_COMP2_MODER_MASK_B     ((uint32_t)0x00000C00)
+//#define SAMP_CAP_COMP2_MODER_MASK_B_OUT ((uint32_t)0x00000400)
+
+#define SAMP_CAP_COMP2_MASK_B     ((uint32_t)0x00000000)
+#define SAMP_CAP_COMP2_IO_MASK_B        ((uint32_t)0x00000000) /* PB5 */
+#define SAMP_CAP_COMP2_MODER_MASK_B     ((uint32_t)0x00000000)
+#define SAMP_CAP_COMP2_MODER_MASK_B_OUT ((uint32_t)0x00000000)
+
 #else
 #define SAMP_CAP_COMP2_MASK_B           ((uint32_t)0x00000000)
 #define SAMP_CAP_COMP2_IO_MASK_B        ((uint32_t)0x00000000)
@@ -4445,6 +4452,16 @@ void TSL_IO_Init(void)
   * @retval None
   ******************************************************************************
   */
+void TSL_IO_Clamp1(void)
+{
+
+
+
+
+
+
+}
+
 void TSL_IO_Clamp(void)
 {
   /* Open the analog switches */

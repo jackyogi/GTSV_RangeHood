@@ -51,6 +51,8 @@ void RTC_Config(void)
   RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
   RTC_Init(&RTC_InitStructure);
 
+
+	RTC_WakeUpCmd(DISABLE);
   /* EXTI configuration *******************************************************/
   EXTI_ClearITPendingBit(EXTI_Line20);
   EXTI_InitStructure.EXTI_Line = EXTI_Line20;
@@ -61,22 +63,24 @@ void RTC_Config(void)
 
   /* Enable the RTC Wakeup Interrupt */
   NVIC_InitStructure.NVIC_IRQChannel = RTC_WKUP_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
-
+	NVIC_SetPriority(RTC_WKUP_IRQn, (1 << __NVIC_PRIO_BITS) -1);
   /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
-  RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
-  RTC_SetWakeUpCounter(0x0);
-
-	NVIC_SetPriority(RTC_WKUP_IRQn, (1 << __NVIC_PRIO_BITS) -2);
-
+  
+  RTC_SetWakeUpCounter(0x01);
+	RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
+	
+	
+	RTC_ClearITPendingBit(RTC_IT_WUT);
+	  EXTI_ClearITPendingBit(EXTI_Line20);
   /* Enable the RTC Wakeup Interrupt */
   RTC_ITConfig(RTC_IT_WUT, ENABLE);
 
   /* Enable Wakeup Counter */
-  RTC_WakeUpCmd(ENABLE);
+  //RTC_WakeUpCmd(ENABLE);
   
   //PWR_RTCAccessCmd(DISABLE);
 
@@ -103,8 +107,8 @@ void RTC_to_default_config(void)
 
 
 	RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
-	RTC_TimeStructure.RTC_Hours = 23;
-	RTC_TimeStructure.RTC_Minutes = 00;
+	RTC_TimeStructure.RTC_Hours = 2;
+	RTC_TimeStructure.RTC_Minutes = 25;
 	RTC_TimeStructure.RTC_Seconds = 00;
 	
 	
@@ -114,4 +118,15 @@ void RTC_to_default_config(void)
 	//disable access to RTC & disable clk to PWR
 	PWR_RTCAccessCmd(DISABLE);
 	//RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, DISABLE);
+}
+
+void RTC_change_time(uint8_t hr, uint8_t min, uint8_t s)
+{
+	PWR_RTCAccessCmd(ENABLE);
+	RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
+	RTC_TimeStructure.RTC_Hours = hr;
+	RTC_TimeStructure.RTC_Minutes = min;
+	RTC_TimeStructure.RTC_Seconds = s;
+	RTC_SetTime(RTC_Format_BIN, &RTC_TimeStructure);
+	PWR_RTCAccessCmd(DISABLE);
 }

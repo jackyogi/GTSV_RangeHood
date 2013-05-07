@@ -129,6 +129,8 @@ void PendSV_Handler(void)
   while (1);
 }
 
+
+
 /**
   * @brief  This function handles SysTick interrupts.
   * @param  None
@@ -151,16 +153,21 @@ void SysTick_Handler(void)
 					gSystemFlags.ms300_flag = 1;
 				if((msTicks%500) == 0)
 					gSystemFlags.ms500_flag = 1;
+				Lcd_blink_systicISR_ms();
 			
 			}
 		}
 	}
+
+	//buzzer on/off timing
+	Buzzer_systickISR_timing_ms();
+
 }
 
 
 #define IRR_GAP_TICKS 	500
 /**
-  * @brief  This function handles TIM6 global interrupt request.
+  * @brief  TIMER 6 used for IR receiver decode, interupt every 50us
   * @param  None
   * @retval None
   */
@@ -234,6 +241,8 @@ void TIM6_IRQHandler(void)
 	
 }
 
+
+
 /**
   * @brief  This function handles TIM7 global interrupt request.
   * @param  None
@@ -241,16 +250,7 @@ void TIM6_IRQHandler(void)
   */
 void TIM7_IRQHandler(void)
 {	
-	static uint16_t delay_ms;
-	
-	if(++delay_ms == ((uint32_t)(gBuzzerSoundFreqHz-1000)*gBuzzerSoundLenghtMs)/1000 ){
-		TIM_Cmd(TIM7,DISABLE);
-		delay_ms=0;
-	}else{
-		GPIOC->ODR ^= GPIO_Pin_13;
-	}
-
-	
+	Buzzer_timerISR_make_sound();	
 	TIM_ClearITPendingBit(TIM7, TIM_IT_Update);
 }
 
@@ -267,13 +267,14 @@ void EXTI0_IRQHandler(void)
 
 void RTC_WKUP_IRQHandler (void)
 {
-	if(RTC_GetITStatus(RTC_IT_WUT) != RESET)
-	{
+
 	  /* Toggle LED1 */
-	  GPIO_TOGGLE(LD_GPIO_PORT,LD_GREEN_GPIO_PIN);
+	  //GPIO_TOGGLE(LD_GPIO_PORT,LD_GREEN_GPIO_PIN);
+	  //BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 6) ^= 1;
+	  //Lcd_icon_toggle(LCD_CLOCK_ICON);
+	  //LCD_UpdateDisplayRequest();
 	  RTC_ClearITPendingBit(RTC_IT_WUT);
 	  EXTI_ClearITPendingBit(EXTI_Line20);
-	} 
 
 }
 

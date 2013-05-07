@@ -44,8 +44,6 @@ uint16_t msTicks;
 
 uint8_t hours=0, mins=0;
 
-uint16_t gBuzzerSoundFreqHz = BUZZER_SOUND_FREQ_HZ;
-uint16_t gBuzzerSoundLenghtMs = BUZZER_SOUND_LENGHT_MS;
 
 GPIO_InitTypeDef GPIO_InitStructure;
 EXTI_InitTypeDef EXTI_InitStructure;
@@ -58,6 +56,26 @@ uint32_t tmp_ir_cmd;
 
 
 
+void sys_state_change_to_CLK_ADJ(void)
+{
+	gSystemFlags.tmp_hour = RTC_TimeStructure.RTC_Hours;
+	gSystemFlags.tmp_min = RTC_TimeStructure.RTC_Minutes;
+	gSystemFlags.time_adj_stage =0;
+	gSystemFlags.sys_state = SYS_STATE_CLK_ADJ;
+	gSystemFlags.time_adj_delay=0;
+}
+
+void save_tmp_clock_and_change_to_OFF(void)
+{
+	RTC_change_time(gSystemFlags.tmp_hour, gSystemFlags.tmp_min, 0);
+	//save time
+	//send cmd update time to serial
+	LED_TIMER_BT = 0;
+	LED_PLUS_BT = 0;
+	LED_MINUS_BT = 0;
+	gSystemFlags.sys_state = SYS_STATE_OFF;
+	
+}
 /*******************************************************************************/
 /**
   * @brief main entry point.
@@ -93,8 +111,8 @@ int main(void)
 
 	Cpu_to_default_config();
 	RTC_to_default_config();
-	Lcd_to_default_config();
 	Ports_to_default_config();
+  	Lcd_to_default_config();
 	Timers_to_default_config();
 
 #ifdef DEBUG
@@ -105,32 +123,408 @@ int main(void)
 	Irr_init();
 	
 	Tsense_to_default_config();
-  	
+	LED_BACKLIGHT = 1;
   /*Until application reset*/
   while (1)
   {
+  	/* Run TSL RC state machine */
+	Tsense_action();
+	Tsense_key_detect_first();
 	
-	/* Run TSL RC state machine */
-	  Tsense_action();
-	  if(KEY_MINUS_DETECTED ||
-	  	KEY_AUTO_DETECTED ||
-	  	KEY_PLUS_DETECTED ||
-	  	KEY_TIMER_DETECTED ||
-	  	KEY_LIGHT_DETECTED){
-		Buzzer_bip();
-	  }
-	  
+	if(Irr_decode(&irr_decode_results)){
+		tmp_ir_cmd= irr_decode_results.value;
 
+		switch(tmp_ir_cmd){
+		case IRR_NEC_CMD_LIGHT:
+			Buzzer_bip();
+			break;
+
+		case IRR_NEC_CMD_TIMER:
+			
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_AUTO:
+		case IRR_NEC_CMD_ONOFF:
+
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_SPEEDDOWN:
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_SPEEDUP:
+			Buzzer_bip();
+			break;
+		default:
+			break;
+		};
+
+
+		Irr_resume();
+	}else {
+		tmp_ir_cmd=0;
+	}
+	
+
+
+	
+  	switch(gSystemFlags.sys_state){
+	case SYS_STATE_OFF:
+		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+    		//RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
+		Lcd_fill_hours(RTC_TimeStructure.RTC_Hours);
+		Lcd_fill_mins(RTC_TimeStructure.RTC_Minutes);
+		
+		if(Tsense_check_rising_edge(TSENSE_KEY_TIMER) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+			sys_state_change_to_CLK_ADJ();
+			
+		}
+
+		if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP) ){
+			Blower_set_speed(1);
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+		}
+		if(Tsense_check_rising_edge(TSENSE_KEY_MINUS) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+			Blower_set_speed(4);
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+		}
+		if(Tsense_check_rising_edge(TSENSE_KEY_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			gSystemFlags.sys_state = SYS_STATE_AUTO;
+		}
+		
+		if(Lcd_get_blink_cursor())
+			Lcd_icon_on(LCD_COLON_ICON);
+		else
+			Lcd_icon_off(LCD_COLON_ICON);
+		break;
+	case SYS_STATE_AUTO:
+		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+    		RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
+		Lcd_fill_hours(RTC_TimeStructure.RTC_Hours);
+		Lcd_fill_mins(RTC_TimeStructure.RTC_Minutes);
+		if(Lcd_get_blink_cursor())
+			Lcd_icon_on(LCD_COLON_ICON);
+		else
+			Lcd_icon_off(LCD_COLON_ICON);
+		Lcd_icon_on(LCD_ROTATE_ICON);
+		LED_AUTO_BT = 1;
+
+		if(Tsense_check_rising_edge(TSENSE_KEY_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+			LED_AUTO_BT =0;
+			Lcd_icon_off(LCD_ROTATE_ICON);
+		}
+		
+		break;
+	case SYS_STATE_CLK_ADJ:
+		Lcd_icon_on(LCD_COLON_ICON);
+		LED_TIMER_BT = 1;
+		LED_PLUS_BT = 1;
+		LED_MINUS_BT = 1;
+		gSystemFlags.time_adj_delay++;
+		if(gSystemFlags.time_adj_stage == 0){ //adj hours
+			if(Tsense_check_rising_edge(TSENSE_KEY_TIMER) || 
+				(tmp_ir_cmd == IRR_NEC_CMD_TIMER) ||
+				(gSystemFlags.time_adj_delay > 133)){
+				gSystemFlags.time_adj_stage++;
+				gSystemFlags.time_adj_delay =0;
+			}
+			if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
+			    (Tsense_check_key_hold(TSENSE_KEY_PLUS) && gSystemFlags.ms200_flag) ||
+			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
+			    gSystemFlags.ms200_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_hour == 23)
+					gSystemFlags.tmp_hour = 0;
+				else
+					gSystemFlags.tmp_hour++;
+			}
+			if(Tsense_check_rising_edge(TSENSE_KEY_MINUS)  ||
+			    (Tsense_check_key_hold(TSENSE_KEY_MINUS) && gSystemFlags.ms200_flag) ||
+			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+			    gSystemFlags.ms200_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_hour == 0)
+					gSystemFlags.tmp_hour = 23;
+				else
+					gSystemFlags.tmp_hour--;
+			}
+			if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
+				Tsense_check_high_level(TSENSE_KEY_MINUS)||
+				Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
+				Tsense_check_high_level(TSENSE_KEY_LIGHT)||
+				tmp_ir_cmd == IRR_NEC_CMD_LIGHT)
+				gSystemFlags.time_adj_delay =0;
+			
+			if((Lcd_get_blink_cursor()) ||
+				(Tsense_check_high_level(TSENSE_KEY_PLUS)) ||
+				(Tsense_check_high_level(TSENSE_KEY_MINUS)) ){
+				Lcd_fill_hours(gSystemFlags.tmp_hour);
+			}else{
+				Lcd_fill_hours(88);
+			}
+			Lcd_fill_mins(gSystemFlags.tmp_min);
+			
+		}else{  //adj mins
+			if(Tsense_check_rising_edge(TSENSE_KEY_TIMER)|| 
+				(tmp_ir_cmd == IRR_NEC_CMD_TIMER)||
+				(gSystemFlags.time_adj_delay > 133)){
+				save_tmp_clock_and_change_to_OFF();
+			}
+			if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
+			    (Tsense_check_key_hold(TSENSE_KEY_PLUS) && gSystemFlags.ms200_flag) ||
+			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
+			    gSystemFlags.ms200_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_min == 59)
+					gSystemFlags.tmp_min= 0;
+				else
+					gSystemFlags.tmp_min++;
+			}
+			if(Tsense_check_rising_edge(TSENSE_KEY_MINUS)  ||
+			    (Tsense_check_key_hold(TSENSE_KEY_MINUS) && gSystemFlags.ms200_flag)||
+			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+			    gSystemFlags.ms200_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_min == 0)
+					gSystemFlags.tmp_min = 59;
+				else
+					gSystemFlags.tmp_min--;
+			}
+			
+			if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
+				Tsense_check_high_level(TSENSE_KEY_MINUS)||
+				Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
+				Tsense_check_high_level(TSENSE_KEY_LIGHT)||
+				tmp_ir_cmd == IRR_NEC_CMD_LIGHT)
+				gSystemFlags.time_adj_delay =0;
+			
+			Lcd_fill_hours(gSystemFlags.tmp_hour);
+			if(Lcd_get_blink_cursor() ||
+				Tsense_check_high_level(TSENSE_KEY_PLUS) ||
+				Tsense_check_high_level(TSENSE_KEY_MINUS) ){
+				Lcd_fill_mins(gSystemFlags.tmp_min);
+			}else{
+				Lcd_fill_mins(88);
+			}
+		}
+		
+		break;
+	case SYS_STATE_BLOWING:
+		LED_PLUS_BT = 1;
+		LED_MINUS_BT = 1;
+		if(gSystemFlags.blower_fan_speed>2)
+			Lcd_icon_fan(Lcd_get_fan_cursor_fast());
+		else
+			Lcd_icon_fan(Lcd_get_fan_cursor_slow());
+		Lcd_icon_off(LCD_COLON_ICON);
+		Lcd_fill_pos_with_blank(0);
+		Lcd_fill_pos_with_blank(3);
+		Lcd_fill_pos_with_num(2, gSystemFlags.blower_fan_speed);
+		Lcd_fill_pos_with_num(1, 10);
+		//key plus
+		if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP) ){
+			if(gSystemFlags.blower_fan_speed == 4){
+				Blower_set_speed(0);
+				gSystemFlags.sys_state = SYS_STATE_OFF;
+			}else{
+				Blower_set_speed(++gSystemFlags.blower_fan_speed);
+			}
+		}
+		//key minus
+		if(Tsense_check_rising_edge(TSENSE_KEY_MINUS) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+			
+			if(gSystemFlags.blower_fan_speed == 1){
+				Blower_set_speed(0);
+				gSystemFlags.sys_state = SYS_STATE_OFF;
+			}else{
+				Blower_set_speed(--gSystemFlags.blower_fan_speed);
+			}
+		}
+		//key auto
+		if(Tsense_check_rising_edge(TSENSE_KEY_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			Blower_set_speed(0);
+			gSystemFlags.sys_state = SYS_STATE_AUTO;
+		}
+		//key timer
+		if(Tsense_check_rising_edge(TSENSE_KEY_TIMER) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+			gSystemFlags.blower_apo_mins_tmp =1;
+			gSystemFlags.sys_state = SYS_STATE_BLOWING_APO_ADJ;
+			
+		}
+
+		break;
+	case SYS_STATE_BLOWING_APO_ADJ:
+		gSystemFlags.time_adj_delay++;
+		LED_TIMER_BT = 1;
+		if(gSystemFlags.blower_fan_speed>2)
+			Lcd_icon_fan(Lcd_get_fan_cursor_fast());
+		else
+			Lcd_icon_fan(Lcd_get_fan_cursor_slow());
+		Lcd_icon_on(LCD_COLON_ICON);
+		Lcd_icon_on(LCD_CLOCK_ICON);
+		Lcd_fill_mins(0);
+		if(Lcd_get_blink_cursor() ||
+			Tsense_check_high_level(TSENSE_KEY_PLUS) ||
+			Tsense_check_high_level(TSENSE_KEY_MINUS) ){
+			Lcd_fill_hours(gSystemFlags.blower_apo_mins_tmp);
+			if(gSystemFlags.blower_apo_mins_tmp<10)
+				Lcd_fill_pos_with_blank(0);
+		}else{
+			Lcd_fill_hours(88);
+		}
+
+		if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
+		    (Tsense_check_key_hold(TSENSE_KEY_PLUS) && gSystemFlags.ms500_flag) ||
+		    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
+		    gSystemFlags.ms500_flag =0;
+		    gSystemFlags.time_adj_delay = 0;
+			if(gSystemFlags.blower_apo_mins_tmp == 15)
+				gSystemFlags.blower_apo_mins_tmp= 1;
+			else
+				gSystemFlags.blower_apo_mins_tmp++;
+		}
+		if(Tsense_check_rising_edge(TSENSE_KEY_MINUS)  ||
+		    (Tsense_check_key_hold(TSENSE_KEY_MINUS) && gSystemFlags.ms500_flag)||
+		    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+		    gSystemFlags.ms500_flag =0;
+		    gSystemFlags.time_adj_delay = 0;
+			if(gSystemFlags.blower_apo_mins_tmp == 1)
+				gSystemFlags.blower_apo_mins_tmp = 15;
+			else
+				gSystemFlags.blower_apo_mins_tmp--;
+		}
+		if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
+			Tsense_check_high_level(TSENSE_KEY_MINUS)||
+			Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
+			Tsense_check_high_level(TSENSE_KEY_LIGHT)||
+			tmp_ir_cmd == IRR_NEC_CMD_LIGHT)
+			gSystemFlags.time_adj_delay =0;
+
+		if(Tsense_check_rising_edge(TSENSE_KEY_TIMER)|| 
+			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+			Lcd_icon_off(LCD_CLOCK_ICON);
+		}
+		if(gSystemFlags.time_adj_delay>133){
+			gSystemFlags.sys_state = SYS_STATE_BLOWING_APO;
+			RTC_GetTime(RTC_Format_BIN, &(gSystemFlags.blower_apo_begin));
+			gSystemFlags.blower_apo_mins = gSystemFlags.blower_apo_mins_tmp;
+		}
+		break;
+	case SYS_STATE_BLOWING_APO:
+		LED_TIMER_BT = 1;
+		LED_PLUS_BT = 1;
+		LED_MINUS_BT = 1;
+		if(Lcd_get_blink_cursor())
+			Lcd_icon_on(LCD_CLOCK_ICON);
+		else
+			Lcd_icon_off(LCD_CLOCK_ICON);
+		if(gSystemFlags.blower_fan_speed>2)
+			Lcd_icon_fan(Lcd_get_fan_cursor_fast());
+		else
+			Lcd_icon_fan(Lcd_get_fan_cursor_slow());
+		Lcd_icon_off(LCD_COLON_ICON);
+		Lcd_fill_pos_with_blank(0);
+		Lcd_fill_pos_with_blank(3);
+		Lcd_fill_pos_with_num(2, gSystemFlags.blower_fan_speed);
+		Lcd_fill_pos_with_num(1, 10);
+		
+		//key plus
+		if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP) ){
+			if(gSystemFlags.blower_fan_speed == 4){
+				Blower_set_speed(0);
+				gSystemFlags.sys_state = SYS_STATE_OFF;
+				Lcd_icon_off(LCD_CLOCK_ICON);
+			}else{
+				Blower_set_speed(++gSystemFlags.blower_fan_speed);
+			}
+		}
+		//key minus
+		if(Tsense_check_rising_edge(TSENSE_KEY_MINUS) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+			
+			if(gSystemFlags.blower_fan_speed == 1){
+				Blower_set_speed(0);
+				gSystemFlags.sys_state = SYS_STATE_OFF;
+				Lcd_icon_off(LCD_CLOCK_ICON);
+			}else{
+				Blower_set_speed(--gSystemFlags.blower_fan_speed);
+			}
+		}
+		//key auto
+		if(Tsense_check_rising_edge(TSENSE_KEY_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
+			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			Blower_set_speed(0);
+			gSystemFlags.sys_state = SYS_STATE_AUTO;
+			Lcd_icon_off(LCD_CLOCK_ICON);
+		}
+		break;
+	
+  	}
+
+//for any SYS State 
+	if(Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
+		(tmp_ir_cmd == IRR_NEC_CMD_LIGHT)){
+		gSystemFlags.light_state ^= 1;
+		//send cmd for others to turn on lamp
+		//wait for confirm of lamp on (time out??)
+		//send cmd for others to turn off lamp
+		//wait for confirm of lamp off (time out??)
+
+	}
+
+
+
+	if(gSystemFlags.light_state){		
+		Lcd_icon_on(LCD_LIGHTBULB_ICON);
+		Lcd_icon_on(LCD_LIGHTRAY_ICON);
+		MAIN_LAMP_ON;
+		LED_LIGHT_BT_ON;
+		
+	}else{
+		Lcd_icon_off(LCD_LIGHTBULB_ICON);
+		Lcd_icon_off(LCD_LIGHTRAY_ICON);
+		MAIN_LAMP_OFF;
+		LED_LIGHT_BT_OFF;
+	}
+	
+	if((gSystemFlags.sys_state == SYS_STATE_OFF) &&
+		(gSystemFlags.light_state == 0)){
+		LED_BACKLIGHT_OFF;
+	}else{
+		LED_BACKLIGHT_ON;
+	}
+	
+	LCD_UpdateDisplayRequest();
+	
+	Tsense_key_detect_last();
   }
 }
 
 
 
 
-void Gtsv_main_loop(void)
+
+/*
+
+void Irr_main_loop(void)
 {
 	if(Irr_decode(&irr_decode_results)){
-		
+
 		if(irr_decode_results.value == IRR_NEC_REPEAT){
 			if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDDOWN){
 				Buzzer_bip();
@@ -139,7 +533,7 @@ void Gtsv_main_loop(void)
 			}
 		}else if(gSystemFlags.system_state==1){
 			tmp_ir_cmd= irr_decode_results.value;
-			
+
 			switch(tmp_ir_cmd){
 			case IRR_NEC_CMD_LIGHT:
 				Lcd_icon_toggle(LCD_LIGHTBULB_ICON);
@@ -177,42 +571,56 @@ void Gtsv_main_loop(void)
 				Buzzer_bip();
 			}
 		}
-		
-		Irr_resume();	
-	}
-  
 
-  	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-    RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
-	Lcd_fill_hours(RTC_TimeStructure.RTC_Minutes);
-	Lcd_fill_mins(RTC_TimeStructure.RTC_Seconds);
-	
-	//Lcd_icon_on(LCD_LIGHTBULB_ICON);
-	//Lcd_icon_on(LCD_ROTATE_ICON);
-	//Lcd_icon_on(LCD_CLOCK_ICON);
-	//Lcd_icon_on(LCD_LIGHTRAY_ICON);
-	if(gSystemFlags.ms500_flag){
-		gSystemFlags.ms500_flag = 0;
-		GPIO_TOGGLE(GPIOB,GPIO_Pin_7);
-		Lcd_icon_toggle(LCD_COLON_ICON);
-	
+		Irr_resume();
 	}
 
-	if(gSystemFlags.ms300_flag){
-		gSystemFlags.ms300_flag=0;
-		if(++gSystemFlags.fanRotate==3)
-			gSystemFlags.fanRotate=0;
-		
-	}
-	if(gSystemFlags.system_state == 1)
-		Lcd_icon_fan(gSystemFlags.fanRotate);
-	else
-		Lcd_icon_off(LCD_ALL_ICON);
+
 
 	
-	LCD_UpdateDisplayRequest();
 }
-
+*/
+void Blower_set_speed(uint8_t spd)
+{
+	switch(spd){
+	case 1:
+		gSystemFlags.blower_fan_speed = 1;
+		BLOWER_FAN1 = 1;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 2:
+		gSystemFlags.blower_fan_speed = 2;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 1;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 3:
+		gSystemFlags.blower_fan_speed = 3;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 1;
+		BLOWER_FAN4 = 0;
+		break;
+	case 4:
+		gSystemFlags.blower_fan_speed = 4;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 1;
+		break;
+	default:
+		gSystemFlags.blower_fan_speed = 0;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		Lcd_icon_fan(5);
+		break;
+	}
+}
 
 void Cpu_to_default_config(void)
 {
@@ -232,11 +640,10 @@ void Cpu_to_default_config(void)
   */
 
 
-
 void Ports_to_default_config(void)
 {
 
-	
+
 //config GPIO for LCD
 	Lcd_configure_GPIO();
 
@@ -248,7 +655,7 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	
+
 //config GPIO for Buzzer and turn it low
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
@@ -273,7 +680,7 @@ void Ports_to_default_config(void)
 	//GPIO_SetBits(GPIOB, GPIO_Pin_12);
 
 //config GPIO for IR
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);	
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -282,21 +689,21 @@ void Ports_to_default_config(void)
 
 
 
-//config GPIO for FAN
+//config GPIO for FAN: open drain w/ pull up
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-//config GPIO for LMP
+//config GPIO for LMP  : open drain w/ pull up
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
@@ -315,54 +722,27 @@ void Timers_to_default_config(void)
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(TIM6, &TIM_TimeBaseStructure);
-	
+
 	//enable local timer interupt
 	TIM_ClearITPendingBit(TIM6,TIM_IT_Update);
 	TIM_ITConfig(TIM6,TIM_IT_Update,ENABLE);
-	
+
 	//Enable Global TIM6 INT
 	NVIC_InitStructure.NVIC_IRQChannel = TIM6_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = (1 << __NVIC_PRIO_BITS) -2;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
-	
+
 	TIM_Cmd(TIM6, ENABLE);
 
 // Init timer 7 to generate buzzer sound & auto off
 	//clock to TIME7
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7,ENABLE);
-	//TIM7 TimeBase init
-	TIM_TimeBaseStructure.TIM_Period = ((SystemCoreClock / (2*gBuzzerSoundFreqHz)) - 1);
-	TIM_TimeBaseStructure.TIM_Prescaler = 0;
-	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
-	
-	//enable local timer interupt
-	TIM_ClearITPendingBit(TIM7,TIM_IT_Update);
-	TIM_ITConfig(TIM7,TIM_IT_Update,ENABLE);
-	
-	//Enable Global TIM6 INT
-	NVIC_InitStructure.NVIC_IRQChannel = TIM7_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = (1 << __NVIC_PRIO_BITS) -1;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-	
-	//TIM_Cmd(TIM7, ENABLE);
+	Buzzer_timer_to_default_state();
 
 }
 
 
-void Buzzer_bip(void){
-	TIM_Cmd(TIM7, ENABLE);
-}
-
-void Buzzer_bip_ms(uint16_t ms)
-{
-	TIM_Cmd(TIM7, ENABLE);
-}
 /**
   * @brief  Get System Clock config for debug purposes
   * @param  None

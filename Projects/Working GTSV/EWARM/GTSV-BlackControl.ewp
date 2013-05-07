@@ -328,7 +328,7 @@
         <option>
           <name>CCOptStrategy</name>
           <version>0</version>
-          <state>0</state>
+          <state>2</state>
         </option>
         <option>
           <name>CCOptLevelSlave</name>
@@ -1002,16 +1002,16 @@
   <group>
     <name>User</name>
     <file>
+      <name>$PROJ_DIR$\..\src\Buzzer.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\Buzzer.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\src\GTSV_BlackControl_lcd.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\GTSV_RH_RTC_config.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\GTSV_Time_tick.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\inc\GTSV_Time_tick.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\GTSV_TSense.c</name>
@@ -1024,6 +1024,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\main.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\stm32_tsl_conf.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\stm32l1xx_it.c</name>

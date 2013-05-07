@@ -26,15 +26,6 @@
 #include "main.h"
 
 
-#ifndef BITBAND_PERI
-#define BITBAND_PERI(a,b) ((PERIPH_BB_BASE + (a-PERIPH_BASE)*32 + (b*4)))
-#endif
-#ifndef BITBAND_SRAM
-#define BITBAND_SRAM(a,b) ((PERIPH_BB_BASE + (a-PERIPH_BASE)*32 + (b*4)))
-#endif
-
-
-
 #define LCD_RAM_BASE	LCD_BASE
 
 #ifndef LCD_COM_SEG
@@ -70,8 +61,8 @@ static const uint8_t _lcd_segment[10] =
 
 //change from number to 7 segments: g f e d c b a
 //Ex: number 0 will have: g=0, f=1, e=1, d=1, c=1, b=1, a=1 => the binary: 0111111 or hex:0x3F
-static const uint8_t _number_to_7segments[10] = 
-					{0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F}; 
+static const uint8_t _number_to_7segments[11] = 
+					{0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x71}; 
 
 
 //num should be 0..9
@@ -90,11 +81,21 @@ void Lcd_fill_pos_with_num(uint8_t pos, uint8_t num)
 	LCD_COM_SEG(_lcd_com[1], i)   = (segments & (1<<4))>>4;
 	LCD_COM_SEG(_lcd_com[2], i)   = (segments & (1<<6))>>6;
 	LCD_COM_SEG(_lcd_com[3], i)   = (segments & (1<<5))>>5;
-
-
+}
+void Lcd_fill_pos_with_blank(uint8_t pos)
+{
+	uint8_t i, j;
+	i= _lcd_segment[2*pos+1];
+	j= _lcd_segment[2*pos+2];
+	LCD_COM_SEG(_lcd_com[3], j) = 0;
+	LCD_COM_SEG(_lcd_com[2], j) = 0;
+	LCD_COM_SEG(_lcd_com[1], j) = 0;
+	LCD_COM_SEG(_lcd_com[0], j) = 0;
+	LCD_COM_SEG(_lcd_com[1], i)   = 0;
+	LCD_COM_SEG(_lcd_com[2], i)   = 0;
+	LCD_COM_SEG(_lcd_com[3], i)   = 0;
 	
 }
-
 void Lcd_fill_num_to_position(uint8_t num, uint8_t pos)
 {
 	Lcd_fill_pos_with_num(pos, num);
@@ -103,32 +104,39 @@ void Lcd_fill_num_to_position(uint8_t num, uint8_t pos)
 
 void Lcd_fill_hours(uint8_t num)
 {
-	Lcd_fill_pos_with_num(1, num%10);
-	Lcd_fill_pos_with_num(0, num/10);
+	if(num<24){
+		Lcd_fill_pos_with_num(1, num%10);
+		Lcd_fill_pos_with_num(0, num/10);
+		/*
+		if(num>9){
+			Lcd_fill_pos_with_num(1, num%10);
+			Lcd_fill_pos_with_num(0, num/10);
+		}else{
+			Lcd_fill_pos_with_blank(0);
+			Lcd_fill_pos_with_num(1, num);
+		}
+		*/
+	} else{
+		Lcd_fill_pos_with_blank(0);
+		Lcd_fill_pos_with_blank(1);
+	}
 }
 void Lcd_fill_mins(uint8_t num)
 {
-	Lcd_fill_pos_with_num(3, num%10);
-	Lcd_fill_pos_with_num(2, num/10);
+	if(num<60){
+		Lcd_fill_pos_with_num(3, num%10);
+		Lcd_fill_pos_with_num(2, num/10);
+	}else{
+		Lcd_fill_pos_with_blank(2);
+		Lcd_fill_pos_with_blank(3);
+	}
 }
 
 
 
 static uint16_t _lcd_icons=0;;; //for saving current state of all icons.
 
-/*
-struct Lcd_Icon_State {
-	unsigned clock:1;
-	unsigned light_bulb:1;
-	unsigned light_ray:1;
-	unsigned fan1:1;
-	unsigned fan2:1;
-	unsigned fan3:1;
-	unsigned rotate:1;
-	unsigned colon:1;
-} ;
-struct Lcd_Icon_State _lcd_icons_state;
-*/
+
 
 void Lcd_icon_buff_flush(void)
 {
@@ -166,28 +174,92 @@ void Lcd_icon_toggle(enum Lcd_Icons icon)
 
 void Lcd_icon_fan(uint8_t num)
 {
-
-		if(num==0){
-			Lcd_icon_on(LCD_FAN1_ICON);
-			Lcd_icon_off(LCD_FAN2_ICON);
-			Lcd_icon_off(LCD_FAN3_ICON);
-		}
-		if(num==1){
-			Lcd_icon_off(LCD_FAN1_ICON);
-			Lcd_icon_on(LCD_FAN2_ICON);
-			Lcd_icon_off(LCD_FAN3_ICON);
-		}
-		if(num==2){
-			Lcd_icon_off(LCD_FAN1_ICON);
-			Lcd_icon_off(LCD_FAN2_ICON);
-			Lcd_icon_on(LCD_FAN3_ICON);
-		}
+	switch(num){
+	case 0:
+		Lcd_icon_on(LCD_FAN1_ICON);
+		Lcd_icon_off(LCD_FAN2_ICON);
+		Lcd_icon_off(LCD_FAN3_ICON);
+		break;
+	case 1:
+		Lcd_icon_off(LCD_FAN1_ICON);
+		Lcd_icon_on(LCD_FAN2_ICON);
+		Lcd_icon_off(LCD_FAN3_ICON);
+		break;
+	case 2:
+		Lcd_icon_off(LCD_FAN1_ICON);
+		Lcd_icon_off(LCD_FAN2_ICON);
+		Lcd_icon_on(LCD_FAN3_ICON);
+		break;
+	default:
+		Lcd_icon_off(LCD_FAN1_ICON);
+		Lcd_icon_off(LCD_FAN2_ICON);
+		Lcd_icon_off(LCD_FAN3_ICON);
+		break;
+	}
 }
 
 void Lcd_icon_fan_rotate(FunctionalState st)
 {
 	
 }
+
+volatile uint16_t _lcd_blink_mask = (1<<LCD_COLON_ICON);// | (1<<LCD_CLOCK_ICON);
+volatile static uint8_t cnt_50ms=0;
+volatile static uint8_t cnt_50ms_fan_fast=0;
+volatile static uint8_t cnt_50ms_fan_slow=0;
+
+volatile uint8_t _lcd_blink_cursor;
+volatile uint8_t _lcd_fan_cursor_slow=0;
+volatile uint8_t _lcd_fan_cursor_fast=0;
+void Lcd_blink_systicISR_ms(void)
+{
+	
+	
+	if(++cnt_50ms==20)
+		cnt_50ms = 0;
+	
+	if(cnt_50ms<10){
+		//_lcd_icons |= _lcd_blink_mask;
+		_lcd_blink_cursor = 1;
+
+	}else{
+		//_lcd_icons &= ~(_lcd_blink_mask);
+		_lcd_blink_cursor = 0;
+		
+	}
+
+
+	if(++cnt_50ms_fan_fast==3){
+		cnt_50ms_fan_fast = 0;
+		if(++_lcd_fan_cursor_fast==3)
+			_lcd_fan_cursor_fast=0;
+	}
+	if(++cnt_50ms_fan_slow==6){
+		cnt_50ms_fan_slow= 0;
+		if(++_lcd_fan_cursor_slow==3)
+			_lcd_fan_cursor_slow=0;
+	}
+
+	
+
+
+	//Lcd_icon_buff_flush();
+}
+ uint8_t Lcd_get_blink_cursor(void)
+ {
+	return _lcd_blink_cursor;
+ }
+
+uint8_t Lcd_get_fan_cursor_slow(void)
+{
+	return _lcd_fan_cursor_slow;
+}
+
+uint8_t Lcd_get_fan_cursor_fast(void)
+{
+	return _lcd_fan_cursor_fast;
+}
+
 /**
   * @brief  Configures the LCD GLASS relative GPIO port IOs and LCD peripheral.
   * @param  None

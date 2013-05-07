@@ -28,6 +28,7 @@
 #include "GTSV_BlackControl_board.h"
 #include "GTSV_BlackControl_lcd.h"
 #include "GTSV_TSense.h"
+#include "buzzer.h"
 
 #include <stdio.h>
 
@@ -51,8 +52,14 @@ struct SystemConfig {
 
 };
 
-
-
+enum System_state_enum_t {
+	SYS_STATE_OFF,
+	SYS_STATE_AUTO,
+	SYS_STATE_CLK_ADJ,
+	SYS_STATE_BLOWING,
+	SYS_STATE_BLOWING_APO_ADJ,
+	SYS_STATE_BLOWING_APO	
+};
 
 struct SystemFlags {
 	unsigned ms10_flag:1;
@@ -62,19 +69,30 @@ struct SystemFlags {
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
 	unsigned fanRotate:2;
-	unsigned system_state:1;
+
+	unsigned light_state:1;
+	unsigned led_backlight:1;
+	unsigned time_adj_stage:1;
+	uint8_t  time_adj_delay;
+	uint8_t  tmp_hour;
+	uint8_t  tmp_min;
+	uint8_t  blower_apo_mins_tmp;
+	uint8_t  blower_apo_mins;
+	uint8_t  blower_fan_speed;
+	enum System_state_enum_t sys_state;
+	RTC_TimeTypeDef blower_apo_begin;
+	
+	
 };
 
 
 extern uint16_t msTicks;
 extern struct SystemFlags gSystemFlags;
-extern uint16_t gBuzzerSoundFreqHz;
-extern uint16_t gBuzzerSoundLenghtMs;
+
 
 /* Exported constants --------------------------------------------------------*/
 #define DEBUG
-#define BUZZER_SOUND_FREQ_HZ			2000
-#define BUZZER_SOUND_LENGHT_MS	300	
+
 /* Exported macro ------------------------------------------------------------*/
 
 #ifndef BITBAND_PERI
@@ -85,19 +103,49 @@ extern uint16_t gBuzzerSoundLenghtMs;
 #endif
 
 
+#define BITBAND_POINTER_AT(a,b)\
+			*((volatile unsigned char *)(BITBAND_PERI(a,b)))
 
 
-#ifdef DEBUG
-#define TIME_DEBUG_SET(pin_num)	*((volatile unsigned char *)(BITBAND_PERI(GPIOB_BASE + 0x18, pin_num))) = 1
-#define TIME_DEBUG_RESET(pin_num) *((volatile unsigned char *)(BITBAND_PERI(GPIOB_BASE + 0x1A, pin_num))) = 1
+
+//this is for toggle pin
+#ifndef ODR_REG_OFFSET
+#define ODR_REG_OFFSET		0x14
+#endif
+#ifndef BSRRL_REG_OFFSET	
+#define BSRRL_REG_OFFSET		0x18
+#endif
+#ifndef BSRRH_REG_OFFSET	
+#define BSRRH_REG_OFFSET		0x1A
 #endif
 
-#define BUZZER_PORT_BASE	GPIOC_BASE
-#define BUZZER_PIN_NUM			13
-#define BUZZER_PIN_BIT_OUT\
-		*((volatile unsigned char *)(BITBAND_PERI(GPIOB_BASE + 0x14, BUZZER_PIN_NUM)))
-#define BUZZER_TOGGLE()\
-		BUZZER_PIN_BIT_OUT ^= 1;
+#define LED_BACKLIGHT	BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 12)
+#define LED_BACKLIGHT_ON	BITBAND_POINTER_AT(GPIOB_BASE + BSRRL_REG_OFFSET, 12) = 1
+#define LED_BACKLIGHT_OFF BITBAND_POINTER_AT(GPIOB_BASE + BSRRH_REG_OFFSET, 12) = 1
+
+#define LED_LIGHT_BT	BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 13)
+#define LED_LIGHT_BT_ON	BITBAND_POINTER_AT(GPIOB_BASE + BSRRL_REG_OFFSET, 13)=1
+#define LED_LIGHT_BT_OFF BITBAND_POINTER_AT(GPIOB_BASE + BSRRH_REG_OFFSET, 13)=1
+
+#define LED_TIMER_BT	BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 14)
+#define LED_PLUS_BT		BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 2)
+#define LED_MINUS_BT	BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 4)
+#define LED_AUTO_BT		BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 1)
+
+#define MAIN_LAMP		BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 7)
+#define MAIN_LAMP_ON	BITBAND_POINTER_AT(GPIOB_BASE + BSRRL_REG_OFFSET, 7) = 1
+#define MAIN_LAMP_OFF	BITBAND_POINTER_AT(GPIOB_BASE + BSRRH_REG_OFFSET, 7) = 1
+
+#define BLOWER_FAN1		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 2)
+#define BLOWER_FAN2		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 3)
+#define BLOWER_FAN3		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 1)
+#define BLOWER_FAN4		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 0)
+
+
+
+
+
+
 /* Exported functions ------------------------------------------------------- */
 
 //void TimingDelay_Decrement(void);
@@ -108,13 +156,11 @@ void Cpu_to_default_config(void);
 void Get_system_clk_config(void);
 void Ports_to_default_config(void);
 void Timers_to_default_config(void);
-void Buzzer_bip(void);
-void Buzzer_bip_ms(uint16_t ms);
 
-void Gtsv_main_loop(void);
 
-void Enable_touch_keys(void);
+void Irr_main_loop(void);
 
+void Blower_set_speed(uint8_t spd);
 
 #endif /* __MAIN_H */
 
