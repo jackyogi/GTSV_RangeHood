@@ -578,7 +578,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>GTSV-BlackControl.hex</state>
+          <state>WhiteControl.hex</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>
@@ -1008,19 +1008,22 @@
       <name>$PROJ_DIR$\..\inc\Buzzer.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\src\GTSV_BlackControl_lcd.c</name>
+      <name>$PROJ_DIR$\..\src\GTSV_lcd.c</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\src\GTSV_RH_RTC_config.c</name>
+      <name>$PROJ_DIR$\..\inc\GTSV_LCD.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\GTSV_RTC.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\GTSV_RTC.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\GTSV_TSense.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\inc\GTSV_TSense.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\IRremote.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\main.c</name>
@@ -1035,9 +1038,6 @@
       <name>$PROJ_DIR$\..\src\system_stm32l1xx.c</name>
     </file>
   </group>
-  <file>
-    <name>$PROJ_DIR$\..\..\WhiteControl working\EWARM\STM32L-Discovery.dep</name>
-  </file>
 </project>
 
 

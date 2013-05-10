@@ -20,8 +20,6 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "GTSV_BlackControl_lcd.h"
-#include "GTSV_BlackControl_board.h"
 #include "stm32l1xx_lcd.h"
 #include "main.h"
 
@@ -56,66 +54,84 @@ static const uint8_t _lcd_com[4] =
 //to change the MCU segment, just change the offset
 //currently MCUSeg0 driving LCDSeg0, MCUSeg1 driving LCDSeg1, ..., MCUSeg7 driving  LCDSeg4
 //Ex: if you want MCUSeg0(offset=0) driving LCDSeg8 then _lcd_segment_offset[8]=0 
-static const uint8_t _lcd_segment[10] = 
-					{17, 28, 29, 30, 31, 7, 8, 9, 16, 27};
+static const uint8_t _lcd_segment[18] = 
+					{17, 28, 29, 30, 31, 7, 8, 9, 16, 27, 26, 25, 24, 15, 11, 10, 1, 2};
 
 //change from number to 7 segments: g f e d c b a
 //Ex: number 0 will have: g=0, f=1, e=1, d=1, c=1, b=1, a=1 => the binary: 0111111 or hex:0x3F
-static const uint8_t _number_to_7segments[11] = 
-					{0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x71}; 
+static const uint8_t _number_to_7segments[12] = 
+					{0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x71, 0x00}; 
+
+//0,1, 2, 3, 4, 5, 6, 7, 8, 9, F, blank
+
+void Lcd_com_seg_set(uint8_t com, uint8_t seg)
+{
+	LCD_COM_SEG(_lcd_com[com], _lcd_segment[seg]) =1;
+
+}
+void Lcd_com_seg_clear(uint8_t com, uint8_t seg)
+{
+	LCD_COM_SEG(_lcd_com[com], _lcd_segment[seg]) =0;
+
+}
 
 
 //num should be 0..9
-//pos should be 0..3
+//pos should be 0..8
 void Lcd_fill_pos_with_num(uint8_t pos, uint8_t num)
 {
 		uint8_t segments = _number_to_7segments[num];
 	uint8_t i, j;
-	i= _lcd_segment[2*pos+1];
-	j= _lcd_segment[2*pos+2];
+	if(pos<4){
+		i= _lcd_segment[2*pos];
+		j= _lcd_segment[2*pos+1];
 
-	LCD_COM_SEG(_lcd_com[3], j) = (segments & 1);
-	LCD_COM_SEG(_lcd_com[2], j) = (segments & (1<<1))>>1;
-	LCD_COM_SEG(_lcd_com[1], j) = (segments & (1<<2))>>2;
-	LCD_COM_SEG(_lcd_com[0], j) = (segments & (1<<3))>>3;
-	LCD_COM_SEG(_lcd_com[1], i)   = (segments & (1<<4))>>4;
-	LCD_COM_SEG(_lcd_com[2], i)   = (segments & (1<<6))>>6;
-	LCD_COM_SEG(_lcd_com[3], i)   = (segments & (1<<5))>>5;
+		LCD_COM_SEG(_lcd_com[3], j) = (segments & 1);
+		LCD_COM_SEG(_lcd_com[2], j) = (segments & (1<<1))>>1;
+		LCD_COM_SEG(_lcd_com[1], j) = (segments & (1<<2))>>2;
+		LCD_COM_SEG(_lcd_com[0], j) = (segments & (1<<3))>>3;
+		LCD_COM_SEG(_lcd_com[1], i)   = (segments & (1<<4))>>4;
+		LCD_COM_SEG(_lcd_com[2], i)   = (segments & (1<<6))>>6;
+		LCD_COM_SEG(_lcd_com[3], i)   = (segments & (1<<5))>>5;
+	}else{
+		j= _lcd_segment[2*pos];
+		i= _lcd_segment[2*pos+1];
+
+		LCD_COM_SEG(_lcd_com[0], j) = (segments & 1);
+		LCD_COM_SEG(_lcd_com[1], j) = (segments & (1<<1))>>1;
+		LCD_COM_SEG(_lcd_com[2], j) = (segments & (1<<2))>>2;
+		LCD_COM_SEG(_lcd_com[3], j) = (segments & (1<<3))>>3;
+		LCD_COM_SEG(_lcd_com[2], i)   = (segments & (1<<4))>>4;
+		LCD_COM_SEG(_lcd_com[1], i)   = (segments & (1<<6))>>6;
+		LCD_COM_SEG(_lcd_com[0], i)   = (segments & (1<<5))>>5;
+	}
 }
-void Lcd_fill_pos_with_blank(uint8_t pos)
+
+//pos should be 0..3
+//num should be 0..99
+void Lcd_fill_pos_with_double_digit_num(uint8_t pos, uint8_t num)
 {
-	uint8_t i, j;
-	i= _lcd_segment[2*pos+1];
-	j= _lcd_segment[2*pos+2];
-	LCD_COM_SEG(_lcd_com[3], j) = 0;
-	LCD_COM_SEG(_lcd_com[2], j) = 0;
-	LCD_COM_SEG(_lcd_com[1], j) = 0;
-	LCD_COM_SEG(_lcd_com[0], j) = 0;
-	LCD_COM_SEG(_lcd_com[1], i)   = 0;
-	LCD_COM_SEG(_lcd_com[2], i)   = 0;
-	LCD_COM_SEG(_lcd_com[3], i)   = 0;
-	
-}
-void Lcd_fill_num_to_position(uint8_t num, uint8_t pos)
-{
-	Lcd_fill_pos_with_num(pos, num);
+	if((num<100) &&(pos<4)){
+		if(pos<2){
+			Lcd_fill_pos_with_num(2*pos, num/10);
+			Lcd_fill_pos_with_num(2*pos +1, num%10);
+		}else{
+		
+			Lcd_fill_pos_with_num(2*pos, num%10);
+			Lcd_fill_pos_with_num(2*pos +1, num/10);
+		}
+	}else{
+		
+	}
+
 }
 
-
+/*
 void Lcd_fill_hours(uint8_t num)
 {
 	if(num<24){
 		Lcd_fill_pos_with_num(1, num%10);
 		Lcd_fill_pos_with_num(0, num/10);
-		/*
-		if(num>9){
-			Lcd_fill_pos_with_num(1, num%10);
-			Lcd_fill_pos_with_num(0, num/10);
-		}else{
-			Lcd_fill_pos_with_blank(0);
-			Lcd_fill_pos_with_num(1, num);
-		}
-		*/
 	} else{
 		Lcd_fill_pos_with_blank(0);
 		Lcd_fill_pos_with_blank(1);
@@ -132,7 +148,7 @@ void Lcd_fill_mins(uint8_t num)
 	}
 }
 
-
+*/
 
 static uint16_t _lcd_icons_buf=0;;; //for saving current state of all icons.
 
@@ -140,14 +156,13 @@ static uint16_t _lcd_icons_buf=0;;; //for saving current state of all icons.
 
 void Lcd_icon_buff_flush(void)
 {
-	LCD_COM_SEG(_lcd_com[0], _lcd_segment[0]) = (_lcd_icons_buf & (1<<LCD_CLOCK_ICON))>>LCD_CLOCK_ICON;
-	LCD_COM_SEG(_lcd_com[0], _lcd_segment[1]) = (_lcd_icons_buf & (1<<LCD_LIGHTRAY_ICON))>>LCD_LIGHTRAY_ICON;
-	LCD_COM_SEG(_lcd_com[0], _lcd_segment[3]) = (_lcd_icons_buf & (1<<LCD_LIGHTBULB_ICON))>>LCD_LIGHTBULB_ICON;
-	LCD_COM_SEG(_lcd_com[0], _lcd_segment[5]) = (_lcd_icons_buf & (1<<LCD_COLON_ICON))>>LCD_COLON_ICON;
-	LCD_COM_SEG(_lcd_com[0], _lcd_segment[9]) = (_lcd_icons_buf & (1<<LCD_ROTATE_ICON))>>LCD_ROTATE_ICON;
-	LCD_COM_SEG(_lcd_com[1], _lcd_segment[9]) = (_lcd_icons_buf & (1<<LCD_FAN1_ICON))>>LCD_FAN1_ICON;
-	LCD_COM_SEG(_lcd_com[2], _lcd_segment[9]) = (_lcd_icons_buf & (1<<LCD_FAN2_ICON))>>LCD_FAN2_ICON;
-	LCD_COM_SEG(_lcd_com[3], _lcd_segment[9]) = (_lcd_icons_buf & (1<<LCD_FAN3_ICON))>>LCD_FAN3_ICON;
+	LCD_COM_SEG(_lcd_com[0], _lcd_segment[0]) = (_lcd_icons_buf & (1<<LCD_ICON_CLOCK))>>LCD_ICON_CLOCK;
+	LCD_COM_SEG(_lcd_com[3], _lcd_segment[15]) = (_lcd_icons_buf & (1<<LCD_ICON_LIGHT))>>LCD_ICON_LIGHT;
+	LCD_COM_SEG(_lcd_com[0], _lcd_segment[4]) = (_lcd_icons_buf & (1<<LCD_ICON_COLON1))>>LCD_ICON_COLON1;
+	LCD_COM_SEG(_lcd_com[3], _lcd_segment[11]) = (_lcd_icons_buf & (1<<LCD_ICON_COLON2))>>LCD_ICON_COLON2;
+	LCD_COM_SEG(_lcd_com[0], _lcd_segment[2]) = (_lcd_icons_buf & (1<<LCD_ICON_FAN1))>>LCD_ICON_FAN1;
+	LCD_COM_SEG(_lcd_com[0], _lcd_segment[6]) = (_lcd_icons_buf & (1<<LCD_ICON_FAN2))>>LCD_ICON_FAN2;
+	LCD_COM_SEG(_lcd_com[3], _lcd_segment[17]) = (_lcd_icons_buf & (1<<LCD_ICON_FAN3))>>LCD_ICON_FAN3;
 }	
 
 void Lcd_icon_on(enum Lcd_Icons icon)
@@ -158,7 +173,7 @@ void Lcd_icon_on(enum Lcd_Icons icon)
 
 void Lcd_icon_off(enum Lcd_Icons icon)
 {
-	if(icon == LCD_ALL_ICON)
+	if(icon == LCD_ICON_ALL)
 		_lcd_icons_buf = 0;
 	else
 		_lcd_icons_buf  &= ~(1<<icon);
@@ -176,34 +191,30 @@ void Lcd_icon_fan(uint8_t num)
 {
 	switch(num){
 	case 0:
-		Lcd_icon_on(LCD_FAN1_ICON);
-		Lcd_icon_off(LCD_FAN2_ICON);
-		Lcd_icon_off(LCD_FAN3_ICON);
+		Lcd_icon_on(LCD_ICON_FAN1);
+		Lcd_icon_off(LCD_ICON_FAN2);
+		Lcd_icon_off(LCD_ICON_FAN3);
 		break;
 	case 1:
-		Lcd_icon_off(LCD_FAN1_ICON);
-		Lcd_icon_on(LCD_FAN2_ICON);
-		Lcd_icon_off(LCD_FAN3_ICON);
+		Lcd_icon_off(LCD_ICON_FAN1);
+		Lcd_icon_on(LCD_ICON_FAN2);
+		Lcd_icon_off(LCD_ICON_FAN3);
 		break;
 	case 2:
-		Lcd_icon_off(LCD_FAN1_ICON);
-		Lcd_icon_off(LCD_FAN2_ICON);
-		Lcd_icon_on(LCD_FAN3_ICON);
+		Lcd_icon_off(LCD_ICON_FAN1);
+		Lcd_icon_off(LCD_ICON_FAN2);
+		Lcd_icon_on(LCD_ICON_FAN3);
 		break;
 	default:
-		Lcd_icon_off(LCD_FAN1_ICON);
-		Lcd_icon_off(LCD_FAN2_ICON);
-		Lcd_icon_off(LCD_FAN3_ICON);
+		Lcd_icon_off(LCD_ICON_FAN1);
+		Lcd_icon_off(LCD_ICON_FAN2);
+		Lcd_icon_off(LCD_ICON_FAN3);
 		break;
 	}
 }
 
-void Lcd_icon_fan_rotate(FunctionalState st)
-{
-	
-}
 
-volatile uint16_t _lcd_blink_mask = (1<<LCD_COLON_ICON);// | (1<<LCD_CLOCK_ICON);
+//volatile uint16_t _lcd_blink_mask = (1<<LCD_COLON_ICON);// | (1<<LCD_CLOCK_ICON);
 volatile static uint8_t cnt_50ms=0;
 volatile static uint8_t cnt_50ms_fan_fast=0;
 volatile static uint8_t cnt_50ms_fan_slow=0;
@@ -213,8 +224,6 @@ volatile uint8_t _lcd_fan_cursor_slow=0;
 volatile uint8_t _lcd_fan_cursor_fast=0;
 void Lcd_blink_systicISR_ms(void)
 {
-	
-	
 	if(++cnt_50ms==20)
 		cnt_50ms = 0;
 	
@@ -287,7 +296,7 @@ void Lcd_to_default_config(void)
   LCD_ContrastConfig(LCD_Contrast_Level_7);
 
   LCD_DeadTimeConfig(LCD_DeadTime_0);
-  LCD_PulseOnDurationConfig(LCD_PulseOnDuration_6);
+  LCD_PulseOnDurationConfig(LCD_PulseOnDuration_7);
 
   /* Wait Until the LCD FCR register is synchronized */
   LCD_WaitForSynchro();
@@ -326,12 +335,13 @@ void Lcd_configure_GPIO(void)
 
 /* Configure Output for LCD */
 /* Port A */
-
   GPIO_StructInit(&GPIO_InitStructure);
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_15;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_15 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init( GPIOA, &GPIO_InitStructure);
 
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource3,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource9,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource10,GPIO_AF_LCD) ;
@@ -339,7 +349,8 @@ void Lcd_configure_GPIO(void)
 
 /* Configure Output for LCD */
 /* Port B */
-  GPIO_InitStructure.GPIO_Pin =    GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_8 | GPIO_Pin_9;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_8 | 
+  					GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_15;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init( GPIOB, &GPIO_InitStructure);
 
@@ -348,14 +359,20 @@ void Lcd_configure_GPIO(void)
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource5,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource8,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource10,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource11,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource15,GPIO_AF_LCD) ;
 
 /* Configure Output for LCD */
 /* Port C*/
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12 ;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | 
+  					GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12 ;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init( GPIOC, &GPIO_InitStructure);
 
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource6,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource7,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource8,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOC, GPIO_PinSource9,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOC, GPIO_PinSource10,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOC, GPIO_PinSource11,GPIO_AF_LCD) ;
