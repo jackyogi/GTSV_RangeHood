@@ -73,6 +73,7 @@ struct SystemFlags {
 	unsigned light_state:1;
 	unsigned led_backlight:1;
 	unsigned time_adj_stage:1;
+	unsigned blower_apo_time_out:1;
 	uint8_t  time_adj_delay;
 	uint8_t  tmp_hour;
 	uint8_t  tmp_min;
@@ -82,6 +83,8 @@ struct SystemFlags {
 	enum System_state_enum_t sys_state;
 	RTC_TimeTypeDef blower_apo_begin;
 	RTC_TimeTypeDef blower_apo_end;
+	uint16_t blower_apo_remaining_sec;
+	
 	
 	
 };
@@ -89,10 +92,14 @@ struct SystemFlags {
 
 extern uint16_t msTicks;
 extern struct SystemFlags gSystemFlags;
-
+extern uint32_t tmp_ir_cmd;
 
 /* Exported constants --------------------------------------------------------*/
 #define DEBUG
+#define INT_PRIORITY_WKUP		((1 << __NVIC_PRIO_BITS) -2)
+#define INT_PRIORITY_SYSTICK	((1 << __NVIC_PRIO_BITS) -3)
+#define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -5)
+#define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -6)
 
 /* Exported macro ------------------------------------------------------------*/
 
@@ -163,6 +170,8 @@ void Irr_main_loop(void);
 
 void Blower_set_speed(uint8_t spd);
 void auto_power_off_check_time(void);
+bool Systick_check_delay50ms(void);
+
 
 
 #endif /* __MAIN_H */

@@ -149,4 +149,41 @@ void Irr_resume(void)
 	irrparams.rawbuff_len = 0;
 }
 
+void Irr_key_detect(void)
+{
+	if(Irr_decode(&irr_decode_results)){
+		tmp_ir_cmd= irr_decode_results.value;
+
+		switch(tmp_ir_cmd){
+		case IRR_NEC_CMD_LIGHT:
+			Buzzer_bip();
+			break;
+
+		case IRR_NEC_CMD_TIMER:
+			
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_AUTO:
+		case IRR_NEC_CMD_ONOFF:
+
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_SPEEDDOWN:
+			Buzzer_bip();
+			break;
+		case IRR_NEC_CMD_SPEEDUP:
+			Buzzer_bip();
+			break;
+		default:
+			break;
+		};
+
+
+		Irr_resume();
+	}else {
+		tmp_ir_cmd=0;
+	}
+
+}
+
 

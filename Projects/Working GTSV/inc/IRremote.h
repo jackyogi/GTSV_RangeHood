@@ -49,6 +49,13 @@
 #define IRR_NEC_CMD_TIMER		0x04FB9867
 
 /* Exported types ------------------------------------------------------------*/
+enum Irr_key_enum_t{
+	IRR_KEY_PLUS,
+	IRR_KEY_MINUS,
+	IRR_KEY_TIMER,
+	IRR_KEY_AUTO,
+	IRR_KEY_LIGHT
+};
 
 //ir recv states
 enum irr_state_t {
@@ -85,7 +92,6 @@ struct irr_decode_results_t {
 
 /* Exported vars ------------------------------------------------------------*/
 
-
 extern struct irrparams_t irrparams;
 extern struct irr_decode_results_t irr_decode_results;
 
@@ -93,6 +99,12 @@ extern struct irr_decode_results_t irr_decode_results;
 void Irr_init(void);
 int Irr_decode(struct irr_decode_results_t *results);
 void Irr_resume(void);
+void Irr_key_detect(void);
+
+uint8_t Irr_key_check_rising(enum Irr_key_enum_t key);
+uint8_t Irr_key_check_falling(enum Irr_key_enum_t key);
+
+
 
 
 #endif /* __IRREMOTE_H_INCLUDED */

@@ -34,16 +34,21 @@ enum Tsense_key_enum_t {
 //call this to initialize Touch Sense
 void Tsense_to_default_config(void);
 
-//call this in a loop to process touch sense actions
-void Tsense_action(void);
+void Tsense_key_detect(void);
+void Tsense_key_hold_detect_tick50ms(void); //<-- must be called in 50ms tick
 
-void Tsense_key_detect_first(void);
+/*
+bool Tsense_check_rising_edge(enum Tsense_key_enum_t key);
+bool Tsense_check_falling_edge(enum Tsense_key_enum_t key);
+bool Tsense_check_high_level(enum Tsense_key_enum_t key);
+bool Tsense_check_key_hold(enum Tsense_key_enum_t key);
+*/
 
-uint8_t Tsense_check_rising_edge(enum Tsense_key_enum_t key);
-uint8_t Tsense_check_high_level(enum Tsense_key_enum_t key);
-uint8_t Tsense_check_key_hold(enum Tsense_key_enum_t key);
+bool Tsense_check_key_pushing(enum Tsense_key_enum_t key);
+bool Tsense_check_key_releasing(enum Tsense_key_enum_t key);
+bool Tsense_check_key_pushed(enum Tsense_key_enum_t key);
+bool Tsense_check_key_holding(enum Tsense_key_enum_t key);
 
-void Tsense_key_detect_last(void);
 
 
 

@@ -146,6 +146,7 @@ void SysTick_Handler(void)
 		gSystemFlags.ms10_flag =1;
 		if((msTicks%50) == 0){
 			gSystemFlags.ms50_flag = 1;
+			Buzzer_off_timing_tick50ms();
 			if((msTicks%100) == 0){
 				gSystemFlags.ms100_flag = 1;
 				if((msTicks%200)==0)
@@ -154,18 +155,28 @@ void SysTick_Handler(void)
 					gSystemFlags.ms300_flag = 1;
 				if((msTicks%500) == 0)
 					gSystemFlags.ms500_flag = 1;
-				Lcd_blink_systicISR_ms();
-			
+				Lcd_blink_systicISR_ms();  //<--put this to main loop
+				//Tsense_key_detect_tick50ms();
+				
 			}
 		}
 	}
 
 	//buzzer on/off timing
-	Buzzer_systickISR_timing_ms();
+	//Buzzer_systickISR_timing_ms();  //<--put this to main loop
 	//if(gSystemFlags.sys_state == SYS_STATE_BLOWING_APO)
 		//auto_power_off_check_time();
 }
 
+bool Systick_check_delay50ms(void)
+{
+	if(gSystemFlags.ms50_flag){
+		gSystemFlags.ms50_flag=0;
+		return TRUE;
+	}else{
+		return FALSE;
+	}
+}
 
 #define IRR_GAP_TICKS 	500
 /**
@@ -270,13 +281,23 @@ void EXTI0_IRQHandler(void)
 void RTC_WKUP_IRQHandler (void)
 {
 
-	  /* Toggle LED1 */
-	  //GPIO_TOGGLE(LD_GPIO_PORT,LD_GREEN_GPIO_PIN);
-	  //BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 6) ^= 1;
-	  //Lcd_icon_toggle(LCD_CLOCK_ICON);
-	  //LCD_UpdateDisplayRequest();
-	  RTC_ClearITPendingBit(RTC_IT_WUT);
-	  EXTI_ClearITPendingBit(EXTI_Line20);
+	/* Toggle LED1 */
+	//GPIO_TOGGLE(LD_GPIO_PORT,LD_GREEN_GPIO_PIN);
+	//BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 6) ^= 1;
+	//Lcd_icon_toggle(LCD_CLOCK_ICON);
+	//LCD_UpdateDisplayRequest();
+
+	if(gSystemFlags.sys_state == SYS_STATE_BLOWING_APO){
+		if(gSystemFlags.blower_apo_remaining_sec == 0){
+			gSystemFlags.blower_apo_time_out =1;
+		}else{
+			gSystemFlags.blower_apo_remaining_sec--;
+		}
+	}
+	PWR_RTCAccessCmd(ENABLE);
+	RTC_ClearITPendingBit(RTC_IT_WUT);
+	EXTI_ClearITPendingBit(EXTI_Line20);
+	PWR_RTCAccessCmd(DISABLE);
 
 }
 

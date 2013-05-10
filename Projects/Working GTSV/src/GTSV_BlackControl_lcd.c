@@ -388,10 +388,10 @@ void Lcd_configure_GPIO(void)
 void Lcd_clear(void)
 {
   uint8_t counter = 0;
-
+  _lcd_icons =0;
   /* TO wait LCD Ready */
   while( LCD_GetFlagStatus (LCD_FLAG_UDR) != RESET) ;
-
+	
   for (counter = LCD_RAMRegister_0; counter <= LCD_RAMRegister_15; counter++)
   {
     LCD->RAM[counter] = 0;

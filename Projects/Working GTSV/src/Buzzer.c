@@ -10,26 +10,43 @@
 		BUZZER_BIT ^= 1;
 
 //buzzer private global vars
-uint16_t	_gBuzzer_msTick = 0;
-uint16_t	_gBuzzer_bip_lenght;
+uint16_t	_gBuzzer_bip_lenght = 5;
+uint8_t		_gBuzzer_50msTick = 0;
+uint8_t		_gBuzzer_bip_cnt = 0;
 
 
-int Buzzer_bip_ms(uint16_t ms)
+int Buzzer_bip(void)
 {
-	if(_gBuzzer_msTick == 0){
-		_gBuzzer_bip_lenght = ms;
-		_gBuzzer_msTick = 1;
+	if(_gBuzzer_50msTick == 0){
+		_gBuzzer_50msTick = 1;
+		_gBuzzer_bip_cnt = 1;
 		return 0;
 	} else {
 		return -1;
 	}
 }
-int Buzzer_bip(void)
+int Buzzer_2bips(void)
 {
-	return Buzzer_bip_ms(BUZZER_DEFAULT_BIP_LENGHT_MS);
+	if(_gBuzzer_50msTick == 0){
+		_gBuzzer_50msTick = 1;
+		_gBuzzer_bip_cnt = 2;
+		return 0;
+	} else {
+		return -1;
+	}
+}
+int Buzzer_3bips(void)
+{
+	if(_gBuzzer_50msTick == 0){
+		_gBuzzer_50msTick = 1;
+		_gBuzzer_bip_cnt = 3;
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
-
+/*
 //call in systick ISR every ms to timing on/off buzzer
 void Buzzer_systickISR_timing_ms(void)
 {
@@ -45,7 +62,26 @@ void Buzzer_systickISR_timing_ms(void)
 		}
 	}
 }
+*/
+void Buzzer_off_timing_tick50ms(void)
+{
+	if(_gBuzzer_50msTick){
+		if(_gBuzzer_50msTick < _gBuzzer_bip_lenght){
+			if(_gBuzzer_50msTick == 1)
+				TIM_Cmd(BUZZER_TIMER, ENABLE);
+			_gBuzzer_50msTick++;
+		}else{
+			TIM_Cmd(BUZZER_TIMER, DISABLE);
+			_gBuzzer_bip_cnt--;
+			if(_gBuzzer_bip_cnt == 0)
+				_gBuzzer_50msTick = 0;
+			else
+				_gBuzzer_50msTick = 1;
+		}
+	}
 
+	
+}
 //call in Timer ISR to generate sound
 void Buzzer_timerISR_make_sound(void)
 {
@@ -74,7 +110,7 @@ void Buzzer_timer_to_default_state(void)
 
 	//Enable Global TIM6 INT
 	NVIC_InitStructure.NVIC_IRQChannel = TIM7_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = (1 << __NVIC_PRIO_BITS) -2;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_TIM7;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
