@@ -38,7 +38,7 @@ static volatile uint32_t TimingDelay;
 
 struct SystemConfig _gSystemConfig;
 struct SystemFlags  gSystemFlags;
-uint32_t _LCD_RAM[8];
+//uint32_t _LCD_RAM[8];
 
 uint16_t msTicks;
 
@@ -81,43 +81,51 @@ void main_big_switch(void)
 {
 	switch(gSystemFlags.sys_state){
 	case SYS_STATE_OFF:
+		//update current time
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-    		//RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
 		Lcd_fill_hours(RTC_TimeStructure.RTC_Hours);
 		Lcd_fill_mins(RTC_TimeStructure.RTC_Minutes);
 		
+		//key Timer
 		if(Tsense_check_rising_edge(TSENSE_KEY_TIMER) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
-			sys_state_change_to_CLK_ADJ();
+			gSystemFlags.tmp_hour = RTC_TimeStructure.RTC_Hours;
+			gSystemFlags.tmp_min = RTC_TimeStructure.RTC_Minutes;
+			gSystemFlags.time_adj_stage =0;
+			gSystemFlags.sys_state = SYS_STATE_CLK_ADJ;
+			gSystemFlags.time_adj_delay=0;
 			
 		}
-
+		//key plus
 		if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP) ){
 			Blower_set_speed(1);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 		}
+		//key minus
 		if(Tsense_check_rising_edge(TSENSE_KEY_MINUS) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
 			Blower_set_speed(4);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 		}
+		//key auto
 		if(Tsense_check_rising_edge(TSENSE_KEY_AUTO) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
 		}
-		
+		//blink colon icon
 		if(Lcd_get_blink_cursor())
 			Lcd_icon_on(LCD_COLON_ICON);
 		else
 			Lcd_icon_off(LCD_COLON_ICON);
 		break;
 	case SYS_STATE_AUTO:
+		//update current time
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-    		RTC_GetDate(RTC_Format_BIN, &RTC_DateStructure);
 		Lcd_fill_hours(RTC_TimeStructure.RTC_Hours);
 		Lcd_fill_mins(RTC_TimeStructure.RTC_Minutes);
+		//blink colon icon
 		if(Lcd_get_blink_cursor())
 			Lcd_icon_on(LCD_COLON_ICON);
 		else
@@ -125,6 +133,7 @@ void main_big_switch(void)
 		Lcd_icon_on(LCD_ROTATE_ICON);
 		LED_AUTO_BT = 1;
 
+		//key Auto
 		if(Tsense_check_rising_edge(TSENSE_KEY_AUTO) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
 			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
@@ -141,12 +150,14 @@ void main_big_switch(void)
 		LED_MINUS_BT = 1;
 		gSystemFlags.time_adj_delay++;
 		if(gSystemFlags.time_adj_stage == 0){ //adj hours
+			//key Timer
 			if(Tsense_check_rising_edge(TSENSE_KEY_TIMER) || 
 				(tmp_ir_cmd == IRR_NEC_CMD_TIMER) ||
 				(gSystemFlags.time_adj_delay > 133)){
 				gSystemFlags.time_adj_stage++;
 				gSystemFlags.time_adj_delay =0;
 			}
+			//key plus
 			if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
 			    (Tsense_check_key_hold(TSENSE_KEY_PLUS) && gSystemFlags.ms200_flag) ||
 			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
@@ -157,6 +168,7 @@ void main_big_switch(void)
 				else
 					gSystemFlags.tmp_hour++;
 			}
+			//key minus
 			if(Tsense_check_rising_edge(TSENSE_KEY_MINUS)  ||
 			    (Tsense_check_key_hold(TSENSE_KEY_MINUS) && gSystemFlags.ms200_flag) ||
 			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
@@ -167,6 +179,7 @@ void main_big_switch(void)
 				else
 					gSystemFlags.tmp_hour--;
 			}
+			//reset time_adj_delay if any button active
 			if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
 				Tsense_check_high_level(TSENSE_KEY_MINUS)||
 				Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
@@ -184,11 +197,13 @@ void main_big_switch(void)
 			Lcd_fill_mins(gSystemFlags.tmp_min);
 			
 		}else{  //adj mins
+			//key timer
 			if(Tsense_check_rising_edge(TSENSE_KEY_TIMER)|| 
 				(tmp_ir_cmd == IRR_NEC_CMD_TIMER)||
 				(gSystemFlags.time_adj_delay > 133)){
 				save_tmp_clock_and_change_to_OFF();
 			}
+			//key plus
 			if(Tsense_check_rising_edge(TSENSE_KEY_PLUS) ||
 			    (Tsense_check_key_hold(TSENSE_KEY_PLUS) && gSystemFlags.ms200_flag) ||
 			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
@@ -199,6 +214,7 @@ void main_big_switch(void)
 				else
 					gSystemFlags.tmp_min++;
 			}
+			//key minus
 			if(Tsense_check_rising_edge(TSENSE_KEY_MINUS)  ||
 			    (Tsense_check_key_hold(TSENSE_KEY_MINUS) && gSystemFlags.ms200_flag)||
 			    (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
@@ -209,7 +225,7 @@ void main_big_switch(void)
 				else
 					gSystemFlags.tmp_min--;
 			}
-			
+			//reset time_adj delay
 			if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
 				Tsense_check_high_level(TSENSE_KEY_MINUS)||
 				Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
@@ -323,7 +339,7 @@ void main_big_switch(void)
 			else
 				gSystemFlags.blower_apo_mins_tmp--;
 		}
-		//
+		//reset time_adj_delay
 		if(Tsense_check_high_level(TSENSE_KEY_PLUS) ||
 			Tsense_check_high_level(TSENSE_KEY_MINUS)||
 			Tsense_check_rising_edge(TSENSE_KEY_LIGHT) ||
@@ -423,7 +439,6 @@ void main_big_switch(void)
 			Lcd_icon_off(LCD_CLOCK_ICON);
 		}
 
-		//check time off in systick
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 		if((RTC_TimeStructure.RTC_Seconds == gSystemFlags.blower_apo_end.RTC_Seconds) &&
 			(RTC_TimeStructure.RTC_Minutes == gSystemFlags.blower_apo_end.RTC_Minutes) &&
@@ -718,14 +733,6 @@ void Ports_to_default_config(void)
 //config GPIO for LCD
 	Lcd_configure_GPIO();
 
-//config GPIO for LED: Green & Blue
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 //config GPIO for Buzzer and turn it low
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
@@ -759,8 +766,7 @@ void Ports_to_default_config(void)
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 
-
-//config GPIO for FAN: open drain w/ pull up
+//config GPIO for FAN: 
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -769,7 +775,7 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-//config GPIO for LMP  : open drain w/ pull up
+//config GPIO for LMP  : 
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;

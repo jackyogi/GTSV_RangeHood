@@ -29,7 +29,7 @@
 #include "GTSV_BlackControl_lcd.h"
 #include "GTSV_TSense.h"
 #include "buzzer.h"
-
+#include <stdint.h>
 #include <stdio.h>
 
 /* Exported types ------------------------------------------------------------*/
