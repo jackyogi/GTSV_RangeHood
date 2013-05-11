@@ -9,8 +9,8 @@
 #define BUZZER_TIMER				TIM7
 
 
-#define BUZZER_PORT_BASE				GPIOC_BASE
-#define BUZZER_PIN_NUM				13
+#define BUZZER_PORT_BASE				GPIOA_BASE
+#define BUZZER_PIN_NUM				12
 
 //call this to initialize timer ISR to make sound
 void Buzzer_timer_to_default_state(void);

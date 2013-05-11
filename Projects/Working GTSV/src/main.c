@@ -78,38 +78,38 @@ void main_big_switch(void)
 
 		//*****check keys
 		//key Timer
-		if(Tsense_check_key_pushing(TSENSE_KEY_TIMER) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+		if(Tsense_check_key_pushing(TSENSE_KEY_TIMER)
+			  || Irr_check_key_push(IRR_KEY_TIMER)){
 			gSystemFlags.tmp_hour = RTC_TimeStructure.RTC_Hours;
 			gSystemFlags.tmp_min = RTC_TimeStructure.RTC_Minutes;
 			gSystemFlags.time_adj_stage =0;
 			gSystemFlags.sys_state = SYS_STATE_CLK_ADJ;
 			gSystemFlags.time_adj_delay=0;
-			Lcd_clear();		
+			//Lcd_clear();		
 			all_ui_led_off();
 		}
 		//key plus
-		if(Tsense_check_key_pushing(TSENSE_KEY_PLUS) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP) ){
+		if(Tsense_check_key_pushing(TSENSE_KEY_PLUS)
+			  || Irr_check_key_push(IRR_KEY_PLUS) ){
 			Blower_set_speed(1);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
 			all_ui_led_off();
 		}
 		//key minus
-		if(Tsense_check_key_pushing(TSENSE_KEY_MINUS) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+		if(Tsense_check_key_pushing(TSENSE_KEY_MINUS)
+			   || Irr_check_key_push(IRR_KEY_MINUS)){
 			Blower_set_speed(4);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
 			all_ui_led_off();
 		}
 		//key auto
-		if(Tsense_check_key_pushing(TSENSE_KEY_AUTO) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+		if(Tsense_check_key_pushing(TSENSE_KEY_AUTO)
+			  || Irr_check_key_push(IRR_KEY_AUTO)){
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
-			Lcd_clear();
+			//Lcd_clear();
+			
 			all_ui_led_off();
 		}
 		break;
@@ -128,11 +128,11 @@ void main_big_switch(void)
 
 		//*****check keys
 		//key Auto
-		if(Tsense_check_key_pushing(TSENSE_KEY_AUTO) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_AUTO) ||
-			(tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+		if(Tsense_check_key_pushing(TSENSE_KEY_AUTO)
+			  || Irr_check_key_push(IRR_KEY_AUTO)){
 			gSystemFlags.sys_state = SYS_STATE_OFF;
-			Lcd_clear();
+			//Lcd_clear();
+			Lcd_icon_off(LCD_ROTATE_ICON);
 			all_ui_led_off();
 		}
 		
@@ -217,7 +217,7 @@ void main_big_switch(void)
 					//save time
 					//send cmd update time to serial
 					gSystemFlags.sys_state = SYS_STATE_OFF;
-					Lcd_clear();
+					//Lcd_clear();
 					all_ui_led_off();
 					//if(!Tsense_check_key_pushing(TSENSE_KEY_TIMER))
 						Buzzer_2bips();
@@ -308,13 +308,15 @@ void main_big_switch(void)
 			gSystemFlags.sys_state = SYS_STATE_BLOWING_APO_ADJ;
 			gSystemFlags.time_adj_delay =0;
 			Lcd_clear();
-			all_ui_led_off();
+			//all_ui_led_off();
 		}
 
 		break;
 	case SYS_STATE_BLOWING_APO_ADJ:
 		//*****update LCD & LED
 		LED_TIMER_BT = 1;
+		LED_PLUS_BT = 1;
+		LED_MINUS_BT = 1;
 		Lcd_icon_on(LCD_COLON_ICON);
 		Lcd_icon_on(LCD_CLOCK_ICON);
 		Lcd_fill_mins(0);		
@@ -361,7 +363,7 @@ void main_big_switch(void)
 			  || (tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
-			all_ui_led_off();
+			//all_ui_led_off();
 		}
 		//reset time_adj_delay
 		if(Tsense_check_key_pushed(TSENSE_KEY_PLUS)
@@ -377,7 +379,7 @@ void main_big_switch(void)
 			gSystemFlags.blower_apo_remaining_sec = gSystemFlags.blower_apo_mins_tmp*60;
 			gSystemFlags.blower_apo_time_out = 0;
 			Lcd_clear();
-			all_ui_led_off();
+			//all_ui_led_off();
 			Buzzer_2bips();
 		}
 		break;
@@ -438,7 +440,7 @@ void main_big_switch(void)
 			     || (tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
-			all_ui_led_off();
+			//all_ui_led_off();
 		}
 		//hold key timer ->show remaining time
 		if(Tsense_check_key_holding(TSENSE_KEY_TIMER)){
@@ -522,6 +524,7 @@ int main(void)
   {
 	Tsense_key_detect();
 	Irr_key_detect();
+	//Serial_key_detect();
 	
 	if(Systick_check_delay50ms()){
 		Tsense_key_hold_detect_tick50ms();
@@ -570,70 +573,6 @@ int main(void)
 }
 
 
-
-
-
-/*
-
-void Irr_main_loop(void)
-{
-	if(Irr_decode(&irr_decode_results)){
-
-		if(irr_decode_results.value == IRR_NEC_REPEAT){
-			if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDDOWN){
-				Buzzer_bip();
-			} else if(tmp_ir_cmd== IRR_NEC_CMD_SPEEDUP){
-				Buzzer_bip();
-			}
-		}else if(gSystemFlags.system_state==1){
-			tmp_ir_cmd= irr_decode_results.value;
-
-			switch(tmp_ir_cmd){
-			case IRR_NEC_CMD_LIGHT:
-				Lcd_icon_toggle(LCD_LIGHTBULB_ICON);
-				Lcd_icon_toggle(LCD_LIGHTRAY_ICON);
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_ONOFF:
-				//turn off led
-				GPIOB->ODR = !GPIO_Pin_12;
-				gSystemFlags.system_state = 0;
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_TIMER:
-				Lcd_icon_toggle(LCD_CLOCK_ICON);
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_AUTO:
-				Lcd_icon_toggle(LCD_ROTATE_ICON);
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_SPEEDDOWN:
-				Buzzer_bip();
-				break;
-			case IRR_NEC_CMD_SPEEDUP:
-				Buzzer_bip();
-				break;
-			default:
-				break;
-			};
-		} else if(gSystemFlags.system_state == 0){
-			tmp_ir_cmd= irr_decode_results.value;
-			if(tmp_ir_cmd == IRR_NEC_CMD_ONOFF){
-				gSystemFlags.system_state = 1;
-				GPIOB->ODR = GPIO_Pin_12;
-				Buzzer_bip();
-			}
-		}
-
-		Irr_resume();
-	}
-
-
-
-	
-}
-*/
 void Blower_set_speed(uint8_t spd)
 {
 	switch(spd){
@@ -703,14 +642,14 @@ void Ports_to_default_config(void)
 
 
 //config GPIO for Buzzer and turn it low
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
-	GPIO_ResetBits(GPIOC,GPIO_Pin_13);
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_ResetBits(GPIOA,GPIO_Pin_12);
 
 //config GPIO for UI LEDs
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA |RCC_AHBPeriph_GPIOB, ENABLE);

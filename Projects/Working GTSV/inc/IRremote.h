@@ -47,9 +47,11 @@
 #define IRR_NEC_CMD_LIGHT		0x04FB58A7
 #define IRR_NEC_CMD_AUTO		0x04FB906F
 #define IRR_NEC_CMD_TIMER		0x04FB9867
+#define IRR_NEC_CMD_REPEAT		0xffffffff
 
+#define IRR_NUM_OF_KEYS			5
 /* Exported types ------------------------------------------------------------*/
-enum Irr_key_enum_t{
+enum Irr_Key_Enum_t{
 	IRR_KEY_PLUS,
 	IRR_KEY_MINUS,
 	IRR_KEY_TIMER,
@@ -104,6 +106,7 @@ void Irr_key_detect(void);
 uint8_t Irr_key_check_rising(enum Irr_key_enum_t key);
 uint8_t Irr_key_check_falling(enum Irr_key_enum_t key);
 
+bool Irr_check_key_push(enum Irr_Key_Enum_t key);
 
 
 
