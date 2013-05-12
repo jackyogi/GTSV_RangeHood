@@ -245,10 +245,7 @@ void Irr_key_detect(void)
 
 bool Irr_check_key_push(enum Irr_Key_Enum_t key)
 {
-	if(_irr_keys[key].pushing){
-		_irr_keys[key].pushing=0;
-		return TRUE;
-	}else{
-		return FALSE;
-	}
+
+	return _irr_keys[key].pushing;
+
 }

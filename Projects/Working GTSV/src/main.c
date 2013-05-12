@@ -257,9 +257,9 @@ void main_big_switch(void)
 		//*****update LCD & LED
 		LED_PLUS_BT = 1;
 		LED_MINUS_BT = 1;		
-		//Lcd_icon_off(LCD_COLON_ICON);
-		//Lcd_fill_pos_with_blank(0);
-		//Lcd_fill_pos_with_blank(3);
+		Lcd_icon_off(LCD_COLON_ICON);
+		Lcd_fill_pos_with_blank(0);
+		Lcd_fill_pos_with_blank(3);
 		Lcd_fill_pos_with_num(2, gSystemFlags.blower_fan_speed);
 		Lcd_fill_pos_with_num(1, 10);
 		if(gSystemFlags.blower_fan_speed>2)
@@ -307,7 +307,7 @@ void main_big_switch(void)
 			gSystemFlags.blower_apo_mins_tmp =1;
 			gSystemFlags.sys_state = SYS_STATE_BLOWING_APO_ADJ;
 			gSystemFlags.time_adj_delay =0;
-			Lcd_clear();
+			//Lcd_clear();
 			//all_ui_led_off();
 		}
 
@@ -358,11 +358,23 @@ void main_big_switch(void)
 			else
 				gSystemFlags.blower_apo_mins_tmp--;
 		}
+		if(Tsense_check_key_pushing(TSENSE_KEY_AUTO)
+			    || (tmp_ir_cmd == IRR_NEC_CMD_AUTO)
+			    || (tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			Blower_set_speed(0);
+			gSystemFlags.sys_state = SYS_STATE_AUTO;
+			Lcd_clear();
+			all_ui_led_off();
+		}
 		//key Timer
 		if(Tsense_check_key_pushing(TSENSE_KEY_TIMER) 
 			  || (tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
-			Lcd_clear();
+			Lcd_icon_off(LCD_CLOCK_ICON);
+			Lcd_icon_off(LCD_COLON_ICON);
+			//Lcd_fill_pos_with_blank(3);
+			//Lcd_fill_mins(88);
+			//Lcd_clear();
 			//all_ui_led_off();
 		}
 		//reset time_adj_delay
@@ -388,6 +400,9 @@ void main_big_switch(void)
 		LED_TIMER_BT = 1;
 		LED_PLUS_BT = 1;
 		LED_MINUS_BT = 1;
+		Lcd_fill_pos_with_blank(0);
+		Lcd_fill_pos_with_blank(3);
+		Lcd_icon_off(LCD_COLON_ICON);
 		Lcd_fill_pos_with_num(2, gSystemFlags.blower_fan_speed);
 		Lcd_fill_pos_with_num(1, 10);
 		if(Lcd_get_blink_cursor())
@@ -439,7 +454,8 @@ void main_big_switch(void)
 			  && (!Tsense_check_key_holding(TSENSE_KEY_TIMER))
 			     || (tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
-			Lcd_clear();
+			Lcd_icon_off(LCD_CLOCK_ICON);
+			//Lcd_clear();
 			//all_ui_led_off();
 		}
 		//hold key timer ->show remaining time
@@ -455,7 +471,10 @@ void main_big_switch(void)
 		//check timer release to clear collon
 		if(Tsense_check_key_releasing(TSENSE_KEY_TIMER)){
 			//Lcd_icon_off(LCD_COLON_ICON);
-			Lcd_clear();
+			//Lcd_clear();
+			//Lcd_fill_hours(88);
+			//Lcd_fill_mins(88);
+			//Lcd_icon_off(LCD_COLON_ICON);
 		}
 
 		//check auto power off time out
