@@ -245,6 +245,46 @@ void Lcd_blink_systicISR_ms(void)
 
 	//Lcd_icon_buff_flush();
 }
+
+ void Lcd_blink_tick125ms(void)
+ {
+	 static uint8_t ms125Tick;
+	 
+	 if(++ms125Tick==8)
+		 ms125Tick = 0;
+	 
+	 if(ms125Tick<4){
+		 //_lcd_icons |= _lcd_blink_mask;
+		 _lcd_blink_cursor = 1;
+ 
+	 }else{
+		 //_lcd_icons &= ~(_lcd_blink_mask);
+		 _lcd_blink_cursor = 0;
+		 
+	 }
+ 
+ 	if(++_lcd_fan_cursor_fast==3)
+			 _lcd_fan_cursor_fast=0;
+	/* 150ms
+	 if(++cnt_50ms_fan_fast==3){
+		 cnt_50ms_fan_fast = 0;
+		 
+	 }
+	 */
+	 //300ms
+	 if(++cnt_50ms_fan_slow==3){
+		 cnt_50ms_fan_slow= 0;
+		 if(++_lcd_fan_cursor_slow==3)
+			 _lcd_fan_cursor_slow=0;
+	 }
+ 
+	 
+ 
+ 
+	 //Lcd_icon_buff_flush();
+ }
+
+
  uint8_t Lcd_get_blink_cursor(void)
  {
 	return _lcd_blink_cursor;

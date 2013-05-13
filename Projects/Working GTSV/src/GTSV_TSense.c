@@ -2,7 +2,7 @@
 #include "GTSV_TSense.h"
 
 #define TSENSE_NUM_OF_KEYS	NUMBER_OF_SINGLE_CHANNEL_KEYS
-#define TSENSE_DELAY_HOLD_DETECT	22
+#define TSENSE_DELAY_HOLD_DETECT	12
 
 //keylevel =1 --> key falling  --> key level = 0  --> key rising --> keylevel =1
 //---___---
@@ -18,11 +18,12 @@ struct Tsense_Key_Detect_t{
 
 struct Tsense_Key_Detect_t tsense_keys[TSENSE_NUM_OF_KEYS];
 
+
 //this should be called in main loop to detect key falling, rising, level
 void Tsense_key_detect(void)
 {
 	int i;
-	/* Run TSL RC state machine */
+	// Run TSL RC state machine
 	TSL_Action();
 	
 	for(i=0; i<TSENSE_NUM_OF_KEYS; i++){ //key detected
@@ -53,6 +54,27 @@ void Tsense_key_detect(void)
 
 }
 
+
+void Tsense_key_hold_detect_tick125ms(void)
+{
+	int i;
+
+	for(i=0; i<TSENSE_NUM_OF_KEYS; i++){
+		//detect key hold
+		if(tsense_keys[i].high_level){
+			if(tsense_keys[i].delay_hold_detect>TSENSE_DELAY_HOLD_DETECT){
+				tsense_keys[i].key_hold = 1;
+			}else{
+				tsense_keys[i].delay_hold_detect++;
+			}
+		}else{
+			tsense_keys[i].delay_hold_detect = 0;
+			tsense_keys[i].key_hold = 0;
+		}
+	}
+}
+
+/*
 //this should be called in 50ms tick to detect key hold
 void Tsense_key_hold_detect_tick50ms(void)
 {
@@ -70,6 +92,7 @@ void Tsense_key_hold_detect_tick50ms(void)
 		}
 	}
 }
+*/
 
 /*
 //rising edge & falling edge =1 until user check.

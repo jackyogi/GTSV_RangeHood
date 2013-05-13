@@ -58,7 +58,7 @@ void Lcd_icon_on(enum Lcd_Icons icon);
 void Lcd_icon_off(enum Lcd_Icons icon);
 void Lcd_icon_toggle(enum Lcd_Icons icon);
 void Lcd_icon_fan(uint8_t num);
-void Lcd_blink_systicISR_ms(void);
+//void Lcd_blink_systicISR_ms(void);
 void Lcd_icon_buff_flush(void);
 uint8_t Lcd_get_blink_cursor(void);
 uint8_t Lcd_get_fan_cursor_slow(void);
@@ -67,6 +67,7 @@ uint8_t Lcd_get_fan_cursor_fast(void);
 
 void Lcd_fill_pos_with_blank(uint8_t pos);
 void Lcd_fill_pos_with_num(uint8_t pos, uint8_t num);
+void Lcd_blink_tick125ms(void);
 
 #endif /* stm32l_discovery_lcd*/
 

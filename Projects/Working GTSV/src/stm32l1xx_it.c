@@ -155,7 +155,7 @@ void SysTick_Handler(void)
 					gSystemFlags.ms300_flag = 1;
 				if((msTicks%500) == 0)
 					gSystemFlags.ms500_flag = 1;
-				Lcd_blink_systicISR_ms();  //<--put this to main loop
+				
 				//Tsense_key_detect_tick50ms();
 				
 			}
@@ -277,23 +277,33 @@ void EXTI0_IRQHandler(void)
   //enableInterrupts();
 }
 
-
+//125ms tick
 void RTC_WKUP_IRQHandler (void)
 {
-
+	static uint8_t ms125Tick = 0;
+	static uint16_t sec1Tick = 0;
 	/* Toggle LED1 */
 	//GPIO_TOGGLE(LD_GPIO_PORT,LD_GREEN_GPIO_PIN);
 	//BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 6) ^= 1;
 	//Lcd_icon_toggle(LCD_CLOCK_ICON);
 	//LCD_UpdateDisplayRequest();
-
-	if(gSystemFlags.sys_state == SYS_STATE_BLOWING_APO){
-		if(gSystemFlags.blower_apo_remaining_sec == 0){
-			gSystemFlags.blower_apo_time_out =1;
-		}else{
-			gSystemFlags.blower_apo_remaining_sec--;
+	ms125Tick++;
+	if(ms125Tick == 8){ //1s tick here!
+		ms125Tick=0;
+		sec1Tick++;
+		//check time out in Blowing Auto Power Off
+		if(gSystemFlags.sys_state == SYS_STATE_BLOWING_APO){
+			if(gSystemFlags.blower_apo_remaining_sec == 0){
+				gSystemFlags.blower_apo_time_out =1;
+			}else{
+				gSystemFlags.blower_apo_remaining_sec--;
+			}
 		}
 	}
+	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+	Tsense_key_hold_detect_tick125ms();
+	Lcd_blink_tick125ms();  //tick 125 for LCD blink cursor
+
 	PWR_RTCAccessCmd(ENABLE);
 	RTC_ClearITPendingBit(RTC_IT_WUT);
 	EXTI_ClearITPendingBit(EXTI_Line20);

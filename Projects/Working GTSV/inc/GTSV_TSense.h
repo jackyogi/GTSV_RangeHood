@@ -35,7 +35,8 @@ enum Tsense_key_enum_t {
 void Tsense_to_default_config(void);
 
 void Tsense_key_detect(void);
-void Tsense_key_hold_detect_tick50ms(void); //<-- must be called in 50ms tick
+//void Tsense_key_hold_detect_tick50ms(void); //<-- must be called in 50ms tick
+void Tsense_key_hold_detect_tick125ms(void); //<-- must be called in 125ms tick
 
 /*
 bool Tsense_check_rising_edge(enum Tsense_key_enum_t key);

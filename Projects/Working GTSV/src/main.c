@@ -62,12 +62,163 @@ void all_ui_led_off(void)
 uint32_t tmp_ir_cmd;
 
 
+
+/*******************************************************************************/
+/**
+  * @brief main entry point.
+  * @par Parameters None
+  * @retval void None
+  * @par Required preconditions: None
+  */
+int main(void)
+{
+
+ /*!< At this stage the microcontroller clock setting is already configured,
+       this is done through SystemInit() function which is called from startup
+       file (startup_stm32l1xx_md.s) before to branch to application main.
+       To reconfigure the default setting of SystemInit() function, refer to
+       system_stm32l1xx.c file
+     */
+
+	/* Check if the StandBy flag is set */
+	if (PWR_GetFlagStatus(PWR_FLAG_SB) != RESET)
+	{
+		/* System resumed from STANDBY mode */
+		/* Clear StandBy flag */
+		//RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR,ENABLE);
+		//PWR_ClearFlag(PWR_FLAG_SB);
+		/* set StandbyWakeup indicator*/
+		//StanbyWakeUp = TRUE;
+	} else
+	{
+		/* Reset StandbyWakeup indicator*/
+		//StanbyWakeUp = FALSE;
+	}
+
+#ifdef DEBUG
+	//get system config for debug purposes
+	Get_system_clk_config();
+#endif
+
+	Cpu_to_default_config();
+	RTC_to_default_config();
+	Ports_to_default_config();
+  	Lcd_to_default_config();
+	Timers_to_default_config();
+
+
+
+	Irr_init();
+	
+	Tsense_to_default_config();
+	LED_BACKLIGHT = 1;
+  /*Until application reset*/
+  while (1)
+  {
+	Tsense_key_detect();
+	Irr_key_detect();
+	//Serial_key_detect();
+	
+	if(Systick_check_delay50ms()){
+		//Tsense_key_hold_detect_tick50ms();
+	}
+	
+	
+	
+
+	main_big_switch();
+	
+  	
+
+//for any SYS State 
+	if(Tsense_check_key_pushing(TSENSE_KEY_LIGHT) ||
+		(tmp_ir_cmd == IRR_NEC_CMD_LIGHT)){
+		gSystemFlags.light_state ^= 1;
+		//send cmd for others to turn on lamp
+		//wait for confirm of lamp on (time out??)
+		//send cmd for others to turn off lamp
+		//wait for confirm of lamp off (time out??)
+
+	}
+
+	if(gSystemFlags.light_state){		
+		Lcd_icon_on(LCD_LIGHTBULB_ICON);
+		Lcd_icon_on(LCD_LIGHTRAY_ICON);
+		MAIN_LAMP_ON;
+		LED_LIGHT_BT_ON;
+		
+	}else{
+		Lcd_icon_off(LCD_LIGHTBULB_ICON);
+		Lcd_icon_off(LCD_LIGHTRAY_ICON);
+		MAIN_LAMP_OFF;
+		LED_LIGHT_BT_OFF;
+	}
+	
+	if((gSystemFlags.sys_state == SYS_STATE_OFF) &&
+		(gSystemFlags.light_state == 0)){
+		LED_BACKLIGHT_OFF;
+	}else{
+		LED_BACKLIGHT_ON;
+	}
+	
+	LCD_UpdateDisplayRequest();
+  }
+}
+
+
+void Blower_set_speed(uint8_t spd)
+{
+	switch(spd){
+	case 1:
+		gSystemFlags.blower_fan_speed = 1;
+		BLOWER_FAN1 = 1;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 2:
+		gSystemFlags.blower_fan_speed = 2;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 1;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 3:
+		gSystemFlags.blower_fan_speed = 3;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 1;
+		BLOWER_FAN4 = 0;
+		break;
+	case 4:
+		gSystemFlags.blower_fan_speed = 4;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 1;
+		break;
+	default:
+		gSystemFlags.blower_fan_speed = 0;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		Lcd_icon_fan(5);
+		break;
+	}
+}
+
+void main_tick125ms(void)
+{
+
+}
+
 void main_big_switch(void)
 {
 	switch(gSystemFlags.sys_state){
 	case SYS_STATE_OFF:
 		//*****update LCD & LED
-		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+		//RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 		Lcd_fill_hours(RTC_TimeStructure.RTC_Hours);
 		Lcd_fill_mins(RTC_TimeStructure.RTC_Minutes);
 		//blink colon icon
@@ -115,7 +266,7 @@ void main_big_switch(void)
 		break;
 	case SYS_STATE_AUTO:
 		//*****update LCD & LED
-		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+		//RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 		Lcd_fill_hours(RTC_TimeStructure.RTC_Hours);
 		Lcd_fill_mins(RTC_TimeStructure.RTC_Minutes);
 		//blink colon icon
@@ -489,150 +640,7 @@ void main_big_switch(void)
 	
   	}
 }
-/*******************************************************************************/
-/**
-  * @brief main entry point.
-  * @par Parameters None
-  * @retval void None
-  * @par Required preconditions: None
-  */
-int main(void)
-{
 
- /*!< At this stage the microcontroller clock setting is already configured,
-       this is done through SystemInit() function which is called from startup
-       file (startup_stm32l1xx_md.s) before to branch to application main.
-       To reconfigure the default setting of SystemInit() function, refer to
-       system_stm32l1xx.c file
-     */
-
-	/* Check if the StandBy flag is set */
-	if (PWR_GetFlagStatus(PWR_FLAG_SB) != RESET)
-	{
-		/* System resumed from STANDBY mode */
-		/* Clear StandBy flag */
-		//RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR,ENABLE);
-		//PWR_ClearFlag(PWR_FLAG_SB);
-		/* set StandbyWakeup indicator*/
-		//StanbyWakeUp = TRUE;
-	} else
-	{
-		/* Reset StandbyWakeup indicator*/
-		//StanbyWakeUp = FALSE;
-	}
-
-#ifdef DEBUG
-	//get system config for debug purposes
-	Get_system_clk_config();
-#endif
-
-	Cpu_to_default_config();
-	RTC_to_default_config();
-	Ports_to_default_config();
-  	Lcd_to_default_config();
-	Timers_to_default_config();
-
-
-
-	Irr_init();
-	
-	Tsense_to_default_config();
-	LED_BACKLIGHT = 1;
-  /*Until application reset*/
-  while (1)
-  {
-	Tsense_key_detect();
-	Irr_key_detect();
-	//Serial_key_detect();
-	
-	if(Systick_check_delay50ms()){
-		Tsense_key_hold_detect_tick50ms();
-	}
-	
-	
-	
-
-	main_big_switch();
-	
-  	
-
-//for any SYS State 
-	if(Tsense_check_key_pushing(TSENSE_KEY_LIGHT) ||
-		(tmp_ir_cmd == IRR_NEC_CMD_LIGHT)){
-		gSystemFlags.light_state ^= 1;
-		//send cmd for others to turn on lamp
-		//wait for confirm of lamp on (time out??)
-		//send cmd for others to turn off lamp
-		//wait for confirm of lamp off (time out??)
-
-	}
-
-	if(gSystemFlags.light_state){		
-		Lcd_icon_on(LCD_LIGHTBULB_ICON);
-		Lcd_icon_on(LCD_LIGHTRAY_ICON);
-		MAIN_LAMP_ON;
-		LED_LIGHT_BT_ON;
-		
-	}else{
-		Lcd_icon_off(LCD_LIGHTBULB_ICON);
-		Lcd_icon_off(LCD_LIGHTRAY_ICON);
-		MAIN_LAMP_OFF;
-		LED_LIGHT_BT_OFF;
-	}
-	
-	if((gSystemFlags.sys_state == SYS_STATE_OFF) &&
-		(gSystemFlags.light_state == 0)){
-		LED_BACKLIGHT_OFF;
-	}else{
-		LED_BACKLIGHT_ON;
-	}
-	
-	LCD_UpdateDisplayRequest();
-  }
-}
-
-
-void Blower_set_speed(uint8_t spd)
-{
-	switch(spd){
-	case 1:
-		gSystemFlags.blower_fan_speed = 1;
-		BLOWER_FAN1 = 1;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 0;
-		break;
-	case 2:
-		gSystemFlags.blower_fan_speed = 2;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 1;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 0;
-		break;
-	case 3:
-		gSystemFlags.blower_fan_speed = 3;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 1;
-		BLOWER_FAN4 = 0;
-		break;
-	case 4:
-		gSystemFlags.blower_fan_speed = 4;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 1;
-		break;
-	default:
-		gSystemFlags.blower_fan_speed = 0;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 0;
-		Lcd_icon_fan(5);
-		break;
-	}
-}
 
 void Cpu_to_default_config(void)
 {

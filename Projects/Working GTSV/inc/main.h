@@ -172,6 +172,7 @@ void Blower_set_speed(uint8_t spd);
 void auto_power_off_check_time(void);
 bool Systick_check_delay50ms(void);
 
+void main_big_switch(void);
 
 
 #endif /* __MAIN_H */
