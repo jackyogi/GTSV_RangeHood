@@ -190,45 +190,44 @@ void Irr_key_detect1(void)
 //*****************
 
 struct Irr_Key_Detect_t{
-	unsigned pushing:1;
-	unsigned pushed:1;
-	unsigned holding:1;
-	unsigned releasing:1;
-	uint8_t  delay_hold_detect;
+	unsigned down:1;
+	unsigned hold:1;
 };
 struct Irr_Key_Detect_t _irr_keys[IRR_NUM_OF_KEYS];
 
 void Irr_key_detect(void)
 {
 	static uint32_t current_key, tmp_cmd;
+	int i;
 	
 	if(Irr_decode(&irr_decode_results)){
 		tmp_cmd= irr_decode_results.value;
 
 		switch(tmp_cmd){
 		case IRR_NEC_CMD_LIGHT:
-			_irr_keys[IRR_KEY_LIGHT].pushing =1;
+			_irr_keys[IRR_KEY_LIGHT].down =1;
 			Buzzer_bip();
 			break;
 
 		case IRR_NEC_CMD_TIMER:
-			_irr_keys[IRR_KEY_TIMER].pushing = 1;
+			_irr_keys[IRR_KEY_TIMER].down = 1;
 			Buzzer_bip();
 			break;
 		case IRR_NEC_CMD_AUTO:
 		case IRR_NEC_CMD_ONOFF:
-			_irr_keys[IRR_KEY_AUTO].pushing = 1;
+			_irr_keys[IRR_KEY_AUTO].down = 1;
 			Buzzer_bip();
 			break;
 		case IRR_NEC_CMD_SPEEDDOWN:
-			_irr_keys[IRR_KEY_MINUS].pushing = 1;
+			_irr_keys[IRR_KEY_MINUS].down = 1;
 			Buzzer_bip();
 			break;
 		case IRR_NEC_CMD_SPEEDUP:
-			_irr_keys[IRR_KEY_PLUS].pushing = 1;
+			_irr_keys[IRR_KEY_PLUS].down = 1;
 			Buzzer_bip();
 			break;
 		case IRR_NEC_CMD_REPEAT:
+			//Buzzer_bip();
 			break;
 		default:
 			//clear all
@@ -239,13 +238,19 @@ void Irr_key_detect(void)
 		Irr_resume();
 	}else {
 		tmp_cmd=0;
+		for(i=0; i< IRR_NUM_OF_KEYS; i++){
+			_irr_keys[i].down = 0;
+		}
 	}
 
 }
 
-bool Irr_check_key_push(enum Irr_Key_Enum_t key)
+bool Irr_check_key(enum Irr_Key_Enum_t key)
 {
+	return _irr_keys[key].down;
+}
 
-	return _irr_keys[key].pushing;
-
+bool Irr_check_key_holding(enum Irr_Key_Enum_t key)
+{
+	return _irr_keys[key].hold;
 }

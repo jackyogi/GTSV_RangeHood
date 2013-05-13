@@ -102,7 +102,7 @@ extern uint32_t tmp_ir_cmd;
 #define DEBUG
 #define INT_PRIORITY_WKUP		((1 << __NVIC_PRIO_BITS) -2)
 #define INT_PRIORITY_SYSTICK	((1 << __NVIC_PRIO_BITS) -3)
-#define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -5)
+#define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -7)
 #define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -6)
 
 #define MAIN_TICK_MS		25
