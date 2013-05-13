@@ -139,12 +139,12 @@
 //
 //==============================================================================
 
-#define SCKEY_P1_KEY_COUNT  (1)
+#define SCKEY_P1_KEY_COUNT  (2)
 
 #define SCKEY_P1_CH   (CH2) /**< Possible values are CH1, CH2, CH3 and CH4 */
 
-#define SCKEY_P1_A  (GROUP7)
-#define SCKEY_P1_B  (0)
+#define SCKEY_P1_A  (GROUP3)
+#define SCKEY_P1_B  (GROUP7)
 #define SCKEY_P1_C  (0)
 #define SCKEY_P1_D  (0)
 #define SCKEY_P1_E  (0)
@@ -197,11 +197,11 @@
 //
 //==============================================================================
 
-#define SCKEY_P3_KEY_COUNT  (0)
+#define SCKEY_P3_KEY_COUNT  (1)
 
-#define SCKEY_P3_CH  (0) /**< Possible values are CH1, CH2, CH3 and CH4 */
+#define SCKEY_P3_CH  (CH4) /**< Possible values are CH1, CH2, CH3 and CH4 */
 
-#define SCKEY_P3_A  (0)
+#define SCKEY_P3_A  (GROUP7)
 #define SCKEY_P3_B  (0)
 #define SCKEY_P3_C  (0)
 #define SCKEY_P3_D  (0)
