@@ -115,8 +115,31 @@ int main(void)
   /*Until application reset*/
   while (1)
   {
+  	if(gSystemFlags.ms50_flag){
+		gSystemFlags.ms50_flag=0;
+		//main_tick50ms();
+
+  	}
+
+	// Run TSL RC state machine
+	TSL_Action();
+	if(gSystemFlags.ms125_flag){
+		gSystemFlags.ms125_flag=0;
+
+		main_tick125ms();
+		
+	}
+	
+  }
+}
+
+
+
+
+void main_tick125ms(void)
+{
 	Tsense_key_detect();
-	Irr_key_detect();
+	//Irr_key_detect();
 	//Serial_key_detect();
 	
 	if(Systick_check_delay50ms()){
@@ -162,55 +185,6 @@ int main(void)
 	}
 	
 	LCD_UpdateDisplayRequest();
-  }
-}
-
-
-void Blower_set_speed(uint8_t spd)
-{
-	switch(spd){
-	case 1:
-		gSystemFlags.blower_fan_speed = 1;
-		BLOWER_FAN1 = 1;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 0;
-		break;
-	case 2:
-		gSystemFlags.blower_fan_speed = 2;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 1;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 0;
-		break;
-	case 3:
-		gSystemFlags.blower_fan_speed = 3;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 1;
-		BLOWER_FAN4 = 0;
-		break;
-	case 4:
-		gSystemFlags.blower_fan_speed = 4;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 1;
-		break;
-	default:
-		gSystemFlags.blower_fan_speed = 0;
-		BLOWER_FAN1 = 0;
-		BLOWER_FAN2 = 0;
-		BLOWER_FAN3 = 0;
-		BLOWER_FAN4 = 0;
-		Lcd_icon_fan(5);
-		break;
-	}
-}
-
-void main_tick125ms(void)
-{
-
 }
 
 void main_big_switch(void)
@@ -641,6 +615,47 @@ void main_big_switch(void)
   	}
 }
 
+void Blower_set_speed(uint8_t spd)
+{
+	switch(spd){
+	case 1:
+		gSystemFlags.blower_fan_speed = 1;
+		BLOWER_FAN1 = 1;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 2:
+		gSystemFlags.blower_fan_speed = 2;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 1;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 3:
+		gSystemFlags.blower_fan_speed = 3;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 1;
+		BLOWER_FAN4 = 0;
+		break;
+	case 4:
+		gSystemFlags.blower_fan_speed = 4;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 1;
+		break;
+	default:
+		gSystemFlags.blower_fan_speed = 0;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		Lcd_icon_fan(5);
+		break;
+	}
+}
 
 void Cpu_to_default_config(void)
 {

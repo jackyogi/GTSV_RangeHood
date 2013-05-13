@@ -287,6 +287,9 @@ void RTC_WKUP_IRQHandler (void)
 	//BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 6) ^= 1;
 	//Lcd_icon_toggle(LCD_CLOCK_ICON);
 	//LCD_UpdateDisplayRequest();
+	gSystemFlags.ms125_flag=1;
+	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+	
 	ms125Tick++;
 	if(ms125Tick == 8){ //1s tick here!
 		ms125Tick=0;
@@ -300,7 +303,7 @@ void RTC_WKUP_IRQHandler (void)
 			}
 		}
 	}
-	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+
 	Tsense_key_hold_detect_tick125ms();
 	Lcd_blink_tick125ms();  //tick 125 for LCD blink cursor
 

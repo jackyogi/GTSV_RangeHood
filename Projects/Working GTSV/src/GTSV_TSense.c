@@ -23,8 +23,7 @@ struct Tsense_Key_Detect_t tsense_keys[TSENSE_NUM_OF_KEYS];
 void Tsense_key_detect(void)
 {
 	int i;
-	// Run TSL RC state machine
-	TSL_Action();
+
 	
 	for(i=0; i<TSENSE_NUM_OF_KEYS; i++){ //key detected
 		//after risng edge -> high_level =1

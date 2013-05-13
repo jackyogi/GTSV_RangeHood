@@ -65,6 +65,7 @@ struct SystemFlags {
 	unsigned ms10_flag:1;
 	unsigned ms50_flag:1;
 	unsigned ms100_flag:1;
+	unsigned ms125_flag:1;
 	unsigned ms200_flag:1;
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
@@ -173,6 +174,7 @@ void auto_power_off_check_time(void);
 bool Systick_check_delay50ms(void);
 
 void main_big_switch(void);
+void main_tick125ms(void);
 
 
 #endif /* __MAIN_H */
