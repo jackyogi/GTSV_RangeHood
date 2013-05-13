@@ -69,12 +69,15 @@ struct SystemFlags {
 	unsigned ms200_flag:1;
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
+	unsigned msMain_flag:1;
 	unsigned fanRotate:2;
 
 	unsigned light_state:1;
 	unsigned led_backlight:1;
 	unsigned time_adj_stage:1;
 	unsigned blower_apo_time_out:1;
+
+	uint8_t  msMainTick;
 	uint8_t  time_adj_delay;
 	uint8_t  tmp_hour;
 	uint8_t  tmp_min;
@@ -101,6 +104,10 @@ extern uint32_t tmp_ir_cmd;
 #define INT_PRIORITY_SYSTICK	((1 << __NVIC_PRIO_BITS) -3)
 #define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -5)
 #define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -6)
+
+#define MAIN_TICK_MS		25
+#define TIME_ADJ_DELAY_DEFAULT	88
+
 
 /* Exported macro ------------------------------------------------------------*/
 
@@ -174,7 +181,7 @@ void auto_power_off_check_time(void);
 bool Systick_check_delay50ms(void);
 
 void main_big_switch(void);
-void main_tick125ms(void);
+void main_tick(void);
 
 
 #endif /* __MAIN_H */

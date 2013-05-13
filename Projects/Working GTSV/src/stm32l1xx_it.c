@@ -140,8 +140,11 @@ void SysTick_Handler(void)
 {
 	/* TS handler */
   	TSL_Timer_ISR();
-
-    msTicks++;
+	if(++gSystemFlags.msMainTick == MAIN_TICK_MS){
+		gSystemFlags.msMainTick = 0;
+		gSystemFlags.msMain_flag=1;
+	}
+     msTicks++;
 	if((msTicks%10) ==0){
 		gSystemFlags.ms10_flag =1;
 		if((msTicks%50) == 0){
@@ -288,7 +291,7 @@ void RTC_WKUP_IRQHandler (void)
 	//Lcd_icon_toggle(LCD_CLOCK_ICON);
 	//LCD_UpdateDisplayRequest();
 	gSystemFlags.ms125_flag=1;
-	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+
 	
 	ms125Tick++;
 	if(ms125Tick == 8){ //1s tick here!

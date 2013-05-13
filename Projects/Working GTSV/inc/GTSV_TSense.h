@@ -38,16 +38,12 @@ void Tsense_key_detect(void);
 //void Tsense_key_hold_detect_tick50ms(void); //<-- must be called in 50ms tick
 void Tsense_key_hold_detect_tick125ms(void); //<-- must be called in 125ms tick
 
-/*
-bool Tsense_check_rising_edge(enum Tsense_key_enum_t key);
-bool Tsense_check_falling_edge(enum Tsense_key_enum_t key);
-bool Tsense_check_high_level(enum Tsense_key_enum_t key);
-bool Tsense_check_key_hold(enum Tsense_key_enum_t key);
-*/
 
-bool Tsense_check_key_pushing(enum Tsense_key_enum_t key);
-bool Tsense_check_key_releasing(enum Tsense_key_enum_t key);
-bool Tsense_check_key_pushed(enum Tsense_key_enum_t key);
+
+bool Tsense_check_key(enum Tsense_key_enum_t key);
+bool Tsense_check_key_up(enum Tsense_key_enum_t key);
+bool Tsense_check_key_down(enum Tsense_key_enum_t key);
+bool Tsense_check_key_touching(enum Tsense_key_enum_t key);
 bool Tsense_check_key_holding(enum Tsense_key_enum_t key);
 
 

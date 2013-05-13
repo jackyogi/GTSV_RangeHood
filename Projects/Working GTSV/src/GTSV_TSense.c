@@ -2,7 +2,7 @@
 #include "GTSV_TSense.h"
 
 #define TSENSE_NUM_OF_KEYS	NUMBER_OF_SINGLE_CHANNEL_KEYS
-#define TSENSE_DELAY_HOLD_DETECT	12
+#define TSENSE_DELAY_HOLD_DETECT	8
 
 //keylevel =1 --> key falling  --> key level = 0  --> key rising --> keylevel =1
 //---___---
@@ -47,6 +47,7 @@ void Tsense_key_detect(void)
 		if((!sSCKeyInfo[i].Setting.b.DETECTED)
 			  && (tsense_keys[i].high_level)){
 			tsense_keys[i].falling_edge = 1;
+			
 		}
 
 	}
@@ -93,45 +94,29 @@ void Tsense_key_hold_detect_tick50ms(void)
 }
 */
 
-/*
-//rising edge & falling edge =1 until user check.
-bool Tsense_check_rising_edge(enum Tsense_key_enum_t key)
-{
-	return tsense_keys[key].rising_edge;
-
-}
-bool Tsense_check_falling_edge(enum Tsense_key_enum_t key)
-{
-	return tsense_keys[key].falling_edge;
-}
-bool Tsense_check_high_level(enum Tsense_key_enum_t key)
-{
-	return tsense_keys[key].high_level;
-}
-bool Tsense_check_key_hold(enum Tsense_key_enum_t key)
-{
-	return tsense_keys[key].key_hold;
-}
-*/
-
-bool Tsense_check_key_pushing(enum Tsense_key_enum_t key)
+bool Tsense_check_key(enum Tsense_key_enum_t key)
 {
 	return tsense_keys[key].rising_edge;
 }
-bool Tsense_check_key_releasing(enum Tsense_key_enum_t key)
+
+bool Tsense_check_key_down(enum Tsense_key_enum_t key)
+{
+	return tsense_keys[key].rising_edge;
+}
+bool Tsense_check_key_up(enum Tsense_key_enum_t key)
 {
 	return tsense_keys[key].falling_edge;
 }
-bool Tsense_check_key_pushed(enum Tsense_key_enum_t key)
+
+bool Tsense_check_key_touching(enum Tsense_key_enum_t key)
 {
 	return tsense_keys[key].high_level;
 }
+
 bool Tsense_check_key_holding(enum Tsense_key_enum_t key)
 {
 	return tsense_keys[key].key_hold;
 }
-
-
 
 
 
@@ -157,6 +142,12 @@ void Tsense_to_default_config(void)
 		sSCKeyInfo[i].DxSGroup = 0x01;
 	}
 	#endif
+	sSCKeyInfo[2].DetectThreshold = 38;
+	sSCKeyInfo[2].EndDetectThreshold = 38;
+	sSCKeyInfo[2].RecalibrationThreshold = -22;
+	sSCKeyInfo[4].DetectThreshold = 58;
+	sSCKeyInfo[4].EndDetectThreshold = 58;
+	sSCKeyInfo[4].RecalibrationThreshold = -22;
 	// Change thresholds of specific keys
 	/*
 	sSCKeyInfo[0].DetectThreshold = 99;
