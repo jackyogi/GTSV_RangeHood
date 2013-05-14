@@ -156,14 +156,7 @@ void main_tick(void)
 {
 	Tsense_key_detect();  //must call this once in each main loop
 	Irr_key_detect();
-	//Serial_cmd_detect();
-
-	if(Tsense_check_key(TSENSE_KEY_ANY)){
-		//send cmd: YOU_ARE_SLAVE
-		//wait until ack: YES_I_DO
-		//if not ack after SERIAL_TIMEOUT send again  (8 times)
-		//gSystemFlags.working_mode =
-	}
+	Serial_cmd_detect();
 
 	main_big_switch();
 

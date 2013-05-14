@@ -22,15 +22,36 @@ struct Serial_Cmd_Detect_t {
 
 bool Serial_cmd_do_decode(struct Serial_Cmd_Result_t *results)
 {
-	return FALSE;
+	static uint8_t tmp_cmd;
+	tmp_cmd = results->cmd;
+	switch(tmp_cmd){
+	case SERIAL_CMD_LIGHT:
+	case SERIAL_CMD_PLUS:
+	case SERIAL_CMD_MINUS:
+	case SERIAL_CMD_TIMER:
+	case SERIAL_CMD_AUTO:
+		return TRUE;
+		break;
+	case SERIAL_CMD_UID:
+		//save uid
+		//make uid valid
+		return TRUE;
+		break;
+	default:
+		return FALSE;
+		break;
+	}
 
 }
 
+
+//first byte is len, 2nd byte is cmd
 bool Serial_cmd_decode(struct Serial_Cmd_Result_t *results)
 {
-	if(_serial_parrams.nbr_of_cmd>0){
+	if(_serial_parrams.nbr_of_cmd>0){  //if has at least one cmd in buff
 		results->raw_buff_len = _serial_parrams.buff[_serial_parrams.next_cmd_idx][0];  //the first byte is buf len
 		results->raw_buff = &(_serial_parrams.buff[_serial_parrams.next_cmd_idx][1]);
+		results->cmd = *results->raw_buff;
 		_serial_parrams.nbr_of_cmd--;
 		_serial_parrams.next_cmd_idx++;
 		if(_serial_parrams.next_cmd_idx == SERIAL_RX_NUM_OF_CMD)
@@ -39,7 +60,7 @@ bool Serial_cmd_decode(struct Serial_Cmd_Result_t *results)
 		if(Serial_cmd_do_decode(results)){
 			return TRUE;
 		}
-		
+		return FALSE;
 	}else{
 		return FALSE;
 	}
@@ -100,8 +121,12 @@ void Serial_tx_ISR(void)
 
 }
 
+#define SERIAL_RX_STATE_IDLE	0
+#define SERIAL_RX_STATE_RECEIVING 	1
 void Serial_rx_ISR(void)
 {
+	uint8_t recv_tmp;
+	recv_tmp = (uint8_t)(USART_ReceiveData(SERIAL_COM_PORT) & 0x00FF);
 	
 }
 
