@@ -317,6 +317,84 @@ void RTC_WKUP_IRQHandler (void)
 
 }
 
+void USART1_IRQHandler(void)
+{
+	if(USART_GetITStatus(USART1, USART_IT_TXE) == SET){
+		Serial_tx_ISR();
+
+	}
+
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
+		Serial_rx_ISR();
+	}
+
+}
+
+#if 0
+void USARTx_IRQHandler(void)
+{
+  //* USART in mode Tramitter -------------------------------------------------*/
+  if (USART_GetITStatus(USARTx, USART_IT_TXE) == SET)
+  { //* When Joystick Pressed send the command then send the data */
+    if (UsartMode == USART_MODE_TRANSMITTER)
+    { //* Send the command */
+      if (UsartTransactionType == USART_TRANSACTIONTYPE_CMD)
+      {
+        USART_SendData(USARTx, CmdBuffer[TxIndex++]);
+        if (TxIndex == 0x02)
+        {
+          /* Disable the USARTx transmit data register empty interrupt */
+          USART_ITConfig(USARTx, USART_IT_TXE, DISABLE);
+        }
+      }
+      /* Send the data */
+      else
+      {
+        USART_SendData(USARTx, TxBuffer[TxIndex++]);
+        if (TxIndex == GetVar_NbrOfData())
+        {
+          /* Disable the USARTx transmit data register empty interrupt */
+          USART_ITConfig(USARTx, USART_IT_TXE, DISABLE);
+        }
+      }
+    }
+    /*If Data Received send the ACK*/
+    else
+    {
+      USART_SendData(USARTx, AckBuffer[TxIndex++]);
+      if (TxIndex == 0x02)
+      {
+          /* Disable the USARTx transmit data register empty interrupt */
+          USART_ITConfig(USARTx, USART_IT_TXE, DISABLE);
+      }
+    }
+  }
+  
+  /* USART in mode Receiver --------------------------------------------------*/
+  if (USART_GetITStatus(USARTx, USART_IT_RXNE) == SET)
+  {
+    if (UsartMode == USART_MODE_TRANSMITTER)
+    {
+      AckBuffer[RxIndex++] = USART_ReceiveData(USARTx);
+    }
+    else
+    {
+      /* Receive the command */
+      if (UsartTransactionType == USART_TRANSACTIONTYPE_CMD)
+      {
+        CmdBuffer[RxIndex++] = USART_ReceiveData(USARTx);
+      }
+      /* Receive the USART data */
+      else
+      {
+        RxBuffer[RxIndex++] = USART_ReceiveData(USARTx);
+      }
+    }
+  }     
+}
+
+#endif
+
 /******************************************************************************/
 /*                 STM32L1xx Peripherals Interrupt Handlers                   */
 /*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */

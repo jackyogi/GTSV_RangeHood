@@ -29,6 +29,7 @@
 #include "GTSV_BlackControl_lcd.h"
 #include "GTSV_TSense.h"
 #include "buzzer.h"
+#include "GTSV_serial.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -61,6 +62,11 @@ enum System_state_enum_t {
 	SYS_STATE_BLOWING_APO	
 };
 
+enum System_working_mode_enum_t {
+	WORKING_INPUT_SLAVE,
+	WORKING_OUTPUT_MASTER
+};
+
 struct SystemFlags {
 	unsigned ms10_flag:1;
 	unsigned ms50_flag:1;
@@ -77,6 +83,11 @@ struct SystemFlags {
 	unsigned time_adj_stage:1;
 	unsigned blower_apo_time_out:1;
 
+//when start up, default working mode to INPUT_SLAVE
+//any touch button --> send cmd --> Wait util Ack --> working_mode = OUTPUT_MASTER
+//any correct command from serials --> INPUT_SLAVE --> Ack
+	enum System_working_mode_enum_t working_mode;
+	
 	uint8_t  msMainTick;
 	uint8_t  time_adj_delay;
 	uint8_t  tmp_hour;
@@ -88,7 +99,8 @@ struct SystemFlags {
 	RTC_TimeTypeDef blower_apo_begin;
 	RTC_TimeTypeDef blower_apo_end;
 	uint16_t blower_apo_remaining_sec;
-	
+
+	uint32_t system_uid[3];
 	
 	
 };
@@ -101,11 +113,12 @@ extern uint32_t tmp_ir_cmd;
 /* Exported constants --------------------------------------------------------*/
 #define DEBUG
 #define INT_PRIORITY_WKUP		((1 << __NVIC_PRIO_BITS) -2)
-#define INT_PRIORITY_SYSTICK	((1 << __NVIC_PRIO_BITS) -3)
-#define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -5)
-#define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -6)
+#define INT_PRIORITY_SYSTICK		((1 << __NVIC_PRIO_BITS) -3)
+#define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -5)
+#define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -6)
+#define INT_PRIORITY_USART1		((1 << __NVIC_PRIO_BITS) -3) //-->make sure no lost
 
-#define MAIN_TICK_MS		25
+#define MAIN_TICK_MS			25
 #define TIME_ADJ_DELAY_DEFAULT	88
 
 
@@ -118,6 +131,9 @@ extern uint32_t tmp_ir_cmd;
 #define BITBAND_SRAM(a,b) ((PERIPH_BB_BASE + (a-PERIPH_BASE)*32 + (b*4)))
 #endif
 
+#define U_ID_0 (*(uint32_t*) 0x1FF80050)
+#define U_ID_1 (*(uint32_t*) 0x1FF80054)
+#define U_ID_2 (*(uint32_t*) 0x1FF80058)
 
 #define BITBAND_POINTER_AT(a,b)\
 			*((volatile unsigned char *)(BITBAND_PERI(a,b)))

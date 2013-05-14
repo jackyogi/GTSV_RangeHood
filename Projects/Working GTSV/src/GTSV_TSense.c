@@ -12,11 +12,12 @@ struct Tsense_Key_Detect_t{
 	unsigned falling_edge:1;
 	unsigned high_level:1;
 	unsigned key_hold:1;
+	unsigned any:1;
 	uint8_t  delay_hold_detect;
 
 };
 
-struct Tsense_Key_Detect_t tsense_keys[TSENSE_NUM_OF_KEYS];
+struct Tsense_Key_Detect_t tsense_keys[TSENSE_NUM_OF_KEYS+1]; //for the key any
 
 
 //this should be called in main loop to detect key falling, rising, level
@@ -24,7 +25,7 @@ void Tsense_key_detect(void)
 {
 	int i;
 
-	
+	tsense_keys[TSENSE_KEY_ANY].rising_edge = 0;
 	for(i=0; i<TSENSE_NUM_OF_KEYS; i++){ //key detected
 		//after risng edge -> high_level =1
 		if(tsense_keys[i].rising_edge){
@@ -49,8 +50,11 @@ void Tsense_key_detect(void)
 			tsense_keys[i].falling_edge = 1;
 			
 		}
-
+	tsense_keys[TSENSE_KEY_ANY].rising_edge |= tsense_keys[i].rising_edge; 
+		
 	}
+
+	
 
 }
 

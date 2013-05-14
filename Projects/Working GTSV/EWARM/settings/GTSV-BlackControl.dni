@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=2125796922
+Checksum=143849775
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -60,7 +60,8 @@ Fmt9=RTC_TimeTypeDef-RTC_Seconds	3	0
 Fmt10=struct irr_decode_results_t-value	4	0
 Fmt11=struct irr_decode_results_t-value_bit_len	4	0
 [array_types]
-Fmt0=uint32_t[8]	1	0
+Fmt0=uint32_t[3]	4	0
+Fmt1=uint32_t[8]	1	0
 [watch_formats]
 Fmt0={W}42:*test_bit	1	0
 Fmt1={W}42:0x40000000 + 0x2400	4	0
@@ -88,10 +89,6 @@ GraphEnabled=0
 ShowTimeLog=1
 ShowTimeSum=1
 SumSortOrder=0
-[Disassemble mode]
-mode=0
-[Breakpoints2]
-Count=0
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -99,9 +96,6 @@ Category=_ 0
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
-[Aliases]
-Count=0
-SuppressDialog=0
 [Trace2]
 Enabled=0
 ShowSource=0
@@ -122,3 +116,10 @@ Mode=3
 Graph=0
 Symbiont=0
 Exclusions=
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Count=0
+[Aliases]
+Count=0
+SuppressDialog=0

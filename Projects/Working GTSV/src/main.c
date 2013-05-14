@@ -31,17 +31,27 @@
 #include "main.h"
 #include "GTSV_RH_RTC_config.h"
 
+#ifdef __GNUC__
+  /* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+     set to 'Yes') calls __io_putchar() */
+  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
 
 
 /* Private variables ---------------------------------------------------------*/
 static volatile uint32_t TimingDelay;
 
 struct SystemConfig _gSystemConfig;
-struct SystemFlags  gSystemFlags;
+struct SystemFlags  gSystemFlags = {
+	.working_mode = WORKING_INPUT_SLAVE,
+};
 
 
 uint16_t msTicks;
 uint8_t hours=0, mins=0;
+
 
 
 GPIO_InitTypeDef GPIO_InitStructure;
@@ -60,6 +70,7 @@ void all_ui_led_off(void)
 }
 
 uint32_t tmp_ir_cmd;
+
 
 
 
@@ -95,6 +106,10 @@ int main(void)
 		//StanbyWakeUp = FALSE;
 	}
 
+	gSystemFlags.system_uid[0] = U_ID_0;
+	gSystemFlags.system_uid[1] = U_ID_1;
+	gSystemFlags.system_uid[2] = U_ID_2;
+
 #ifdef DEBUG
 	//get system config for debug purposes
 	Get_system_clk_config();
@@ -103,13 +118,21 @@ int main(void)
 	Cpu_to_default_config();
 	RTC_to_default_config();
 	Ports_to_default_config();
+	Usart_to_default_config();
   	Lcd_to_default_config();
 	Timers_to_default_config();
 
 	Irr_init();
-	
+
 	Tsense_to_default_config();
-	LED_BACKLIGHT = 1;
+
+	//printf("UID = %08X-%08X-%08X\r\n", gSystemFlags.system_uid[0], gSystemFlags.system_uid[1], gSystemFlags.system_uid[2]);
+	while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET) {}
+
+	//send UID 0, 1, 2 "my UID1 %d"
+	//wait (SERIAL_TIMEOUT) until recieve a UID
+	//if(receive a UID) --> compare lower means input slave
+
   /*Until application reset*/
   while (1)
   {
@@ -119,9 +142,9 @@ int main(void)
 	//make sure main_tick update longer than MAIN_TICK_MS
 	if(gSystemFlags.msMainTick){
 		gSystemFlags.msMainTick=0;
-		
+
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-		
+
 	}
   }
 }
@@ -133,12 +156,19 @@ void main_tick(void)
 {
 	Tsense_key_detect();  //must call this once in each main loop
 	Irr_key_detect();
-	//Serial_key_detect();
+	//Serial_cmd_detect();
+
+	if(Tsense_check_key(TSENSE_KEY_ANY)){
+		//send cmd: YOU_ARE_SLAVE
+		//wait until ack: YES_I_DO
+		//if not ack after SERIAL_TIMEOUT send again  (8 times)
+		//gSystemFlags.working_mode =
+	}
 
 	main_big_switch();
-	
-//for any SYS State 
-	if(Tsense_check_key(TSENSE_KEY_LIGHT) 
+
+//for any SYS State
+	if(Tsense_check_key(TSENSE_KEY_LIGHT)
  			|| Irr_check_key(IRR_KEY_LIGHT)){
 		gSystemFlags.light_state ^= 1;
 		//send cmd for others to turn on lamp
@@ -147,33 +177,33 @@ void main_tick(void)
 		//wait for confirm of lamp off (time out??)
 	}
 
-	if(gSystemFlags.light_state){		
+	if(gSystemFlags.light_state){
 		Lcd_icon_on(LCD_LIGHTBULB_ICON);
 		Lcd_icon_on(LCD_LIGHTRAY_ICON);
 		MAIN_LAMP_ON;
 		LED_LIGHT_BT_ON;
-		
+
 	}else{
 		Lcd_icon_off(LCD_LIGHTBULB_ICON);
 		Lcd_icon_off(LCD_LIGHTRAY_ICON);
 		MAIN_LAMP_OFF;
 		LED_LIGHT_BT_OFF;
 	}
-	
+
 	if((gSystemFlags.sys_state == SYS_STATE_OFF) &&
 		(gSystemFlags.light_state == 0)){
 		LED_BACKLIGHT_OFF;
 	}else{
 		LED_BACKLIGHT_ON;
 	}
-	
+
 	LCD_UpdateDisplayRequest();
 }
 
 void main_big_switch(void)
 {
 	static uint8_t blinking_disable=0;
-	
+
 	switch(gSystemFlags.sys_state){
 	case SYS_STATE_OFF:
 		//*****update LCD & LED
@@ -194,7 +224,7 @@ void main_big_switch(void)
 			gSystemFlags.time_adj_stage =0;
 			gSystemFlags.sys_state = SYS_STATE_CLK_ADJ;
 			gSystemFlags.time_adj_delay=0;
-			//Lcd_clear();		
+			//Lcd_clear();
 			all_ui_led_off();
 		}
 		//key plus
@@ -218,7 +248,7 @@ void main_big_switch(void)
 			  || Irr_check_key(IRR_KEY_AUTO)){
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
 			//Lcd_clear();
-			
+
 			all_ui_led_off();
 		}
 		break;
@@ -243,7 +273,7 @@ void main_big_switch(void)
 			Lcd_icon_off(LCD_ROTATE_ICON);
 			all_ui_led_off();
 		}
-		
+
 		break;
 	case SYS_STATE_CLK_ADJ:
 		//*****update LCD & LED
@@ -251,8 +281,8 @@ void main_big_switch(void)
 		LED_TIMER_BT = 1;
 		LED_PLUS_BT = 1;
 		LED_MINUS_BT = 1;
-		
-		
+
+
 		if(gSystemFlags.time_adj_stage == 0){ //adj hours
 			//*****update LCD & LED
 			Lcd_fill_mins(gSystemFlags.tmp_min);
@@ -270,7 +300,7 @@ void main_big_switch(void)
 			}else{
 				Lcd_fill_hours(88);
 			}
-			
+
 			////*****check keys
 			gSystemFlags.time_adj_delay++;
 			//reset time_adj_delay if any button active
@@ -278,15 +308,15 @@ void main_big_switch(void)
 				 	|| Tsense_check_key_touching(TSENSE_KEY_MINUS)
 				 	|| Tsense_check_key(TSENSE_KEY_LIGHT)
 				 	|| Tsense_check_key_touching(TSENSE_KEY_LIGHT)
-				 	|| (Irr_check_key(IRR_KEY_PLUS))
-				 	|| (Irr_check_key(IRR_KEY_MINUS))
-				 	|| (Irr_check_key(IRR_KEY_LIGHT)) )
+				 	|| Irr_check_key(IRR_KEY_PLUS)
+				 	|| Irr_check_key(IRR_KEY_MINUS)
+				 	|| Irr_check_key(IRR_KEY_LIGHT) )
 				gSystemFlags.time_adj_delay =0;
 			//key Timer || time_adj_delay
-			if(Tsense_check_key(TSENSE_KEY_TIMER) 
+			if(Tsense_check_key(TSENSE_KEY_TIMER)
 				 ||Irr_check_key(IRR_KEY_TIMER)
 				 ||(gSystemFlags.time_adj_delay > TIME_ADJ_DELAY_DEFAULT)){
-				 
+
 				gSystemFlags.time_adj_stage++;
 				gSystemFlags.time_adj_delay =0;
 				//if(!Tsense_check_key(TSENSE_KEY_TIMER))
@@ -319,7 +349,7 @@ void main_big_switch(void)
 		}else{  //adj mins
 			//*****update LCD & LED
 			Lcd_fill_hours(gSystemFlags.tmp_hour);
-			//stop blinking mins if touching plus or minus 
+			//stop blinking mins if touching plus or minus
 			if(Tsense_check_key_touching(TSENSE_KEY_PLUS)
 				 	|| Tsense_check_key_touching(TSENSE_KEY_MINUS)
 				  	|| Irr_check_key(IRR_KEY_PLUS)
@@ -333,7 +363,7 @@ void main_big_switch(void)
 			}else{
 				Lcd_fill_mins(88);
 			}
-			
+
 			////*****check keys
 			gSystemFlags.time_adj_delay++;
 			//reset time_adj delay if any key touched
@@ -346,10 +376,10 @@ void main_big_switch(void)
 				 	|| Irr_check_key(IRR_KEY_LIGHT) )
 				gSystemFlags.time_adj_delay =0;
 			//key timer || after adj_delay time
-			if(Tsense_check_key(TSENSE_KEY_TIMER) 
+			if(Tsense_check_key(TSENSE_KEY_TIMER)
 					||Irr_check_key(IRR_KEY_TIMER)
 					||(gSystemFlags.time_adj_delay > TIME_ADJ_DELAY_DEFAULT)){
-				
+
 				RTC_change_time(gSystemFlags.tmp_hour, gSystemFlags.tmp_min, 0);
 				//save time
 				//send cmd update time to serial
@@ -385,7 +415,7 @@ void main_big_switch(void)
 	case SYS_STATE_BLOWING:
 		//*****update LCD & LED
 		LED_PLUS_BT = 1;
-		LED_MINUS_BT = 1;		
+		LED_MINUS_BT = 1;
 		Lcd_icon_off(LCD_COLON_ICON);
 		Lcd_fill_pos_with_blank(0);
 		Lcd_fill_pos_with_blank(3);
@@ -411,7 +441,7 @@ void main_big_switch(void)
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)
-			 	|| Irr_check_key(IRR_KEY_MINUS) ){			
+			 	|| Irr_check_key(IRR_KEY_MINUS) ){
 			if(gSystemFlags.blower_fan_speed == 1){
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
@@ -447,8 +477,8 @@ void main_big_switch(void)
 		LED_MINUS_BT = 1;
 		Lcd_icon_on(LCD_COLON_ICON);
 		Lcd_icon_on(LCD_CLOCK_ICON);
-		Lcd_fill_mins(0);		
-		//stop blinking if touching plus or minus 
+		Lcd_fill_mins(0);
+		//stop blinking if touching plus or minus
 		if((Tsense_check_key_touching(TSENSE_KEY_PLUS))
 			 	||Tsense_check_key_touching(TSENSE_KEY_MINUS)
 			 	|| Irr_check_key(IRR_KEY_PLUS)
@@ -464,7 +494,7 @@ void main_big_switch(void)
 		}else{
 			Lcd_fill_hours(88);
 		}
-		
+
 		if(gSystemFlags.blower_fan_speed>2)
 			Lcd_icon_fan(Lcd_get_fan_cursor_fast());
 		else
@@ -513,7 +543,7 @@ void main_big_switch(void)
 			all_ui_led_off();
 		}
 		//key Timer
-		if(Tsense_check_key(TSENSE_KEY_TIMER) 
+		if(Tsense_check_key(TSENSE_KEY_TIMER)
 			  	|| Irr_check_key(IRR_KEY_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_icon_off(LCD_CLOCK_ICON);
@@ -570,7 +600,7 @@ void main_big_switch(void)
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)
 			 	|| Irr_check_key(IRR_KEY_MINUS) ){
-			
+
 			if(gSystemFlags.blower_fan_speed == 1){
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
@@ -628,7 +658,7 @@ void main_big_switch(void)
 			Buzzer_bip();
 		}
 		break;
-	
+
   	}
 }
 
@@ -694,10 +724,20 @@ void Cpu_to_default_config(void)
 
 void Ports_to_default_config(void)
 {
-
-
 //config GPIO for LCD
 	Lcd_configure_GPIO();
+
+//config GPIO for USART1
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_USART1);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_USART1);
 
 
 //config GPIO for Buzzer and turn it low
@@ -732,7 +772,7 @@ void Ports_to_default_config(void)
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 
-//config GPIO for FAN: 
+//config GPIO for FAN:
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -741,7 +781,7 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-//config GPIO for LMP  : 
+//config GPIO for LMP  :
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -785,6 +825,23 @@ void Timers_to_default_config(void)
 
 }
 
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  * @param  None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART */
+  USART_SendData(SERIAL_COM_PORT, (uint8_t) ch);
+
+  /* Loop until transmit data register is empty */
+  while (USART_GetFlagStatus(SERIAL_COM_PORT, USART_FLAG_TXE) == RESET)
+  {}
+
+  return ch;
+}
 
 /**
   * @brief  Get System Clock config for debug purposes

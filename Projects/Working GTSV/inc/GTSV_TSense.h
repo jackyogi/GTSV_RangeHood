@@ -28,7 +28,8 @@ enum Tsense_key_enum_t {
 	TSENSE_KEY_AUTO=1,
 	TSENSE_KEY_TIMER=2,
 	TSENSE_KEY_PLUS=3,
-	TSENSE_KEY_LIGHT=4
+	TSENSE_KEY_LIGHT=4,
+	TSENSE_KEY_ANY=5
 };
 
 //call this to initialize Touch Sense

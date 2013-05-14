@@ -977,6 +977,9 @@
     <file>
       <name>$PROJ_DIR$\..\..\..\Libraries\STM32L1xx_StdPeriph_Driver\src\stm32l1xx_tim.c</name>
     </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STM32L1xx_StdPeriph_Driver\src\stm32l1xx_usart.c</name>
+    </file>
   </group>
   <group>
     <name>TouchSensingDriver</name>
@@ -1012,6 +1015,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\GTSV_RH_RTC_config.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\GTSV_Serial.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\GTSV_TSense.c</name>
