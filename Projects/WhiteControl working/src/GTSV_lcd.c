@@ -55,7 +55,7 @@ static const uint8_t _lcd_com[4] =
 //currently MCUSeg0 driving LCDSeg0, MCUSeg1 driving LCDSeg1, ..., MCUSeg7 driving  LCDSeg4
 //Ex: if you want MCUSeg0(offset=0) driving LCDSeg8 then _lcd_segment_offset[8]=0 
 static const uint8_t _lcd_segment[18] = 
-					{17, 28, 29, 30, 31, 7, 8, 9, 16, 27, 26, 25, 24, 15, 11, 10, 1, 2};
+					{17, 28, 29, 30, 31, 7, 8, 9, 16, 27, 26, 25, 24, 4, 11, 10, 1, 2};
 
 //change from number to 7 segments: g f e d c b a
 //Ex: number 0 will have: g=0, f=1, e=1, d=1, c=1, b=1, a=1 => the binary: 0111111 or hex:0x3F
@@ -336,12 +336,13 @@ void Lcd_configure_GPIO(void)
 /* Configure Output for LCD */
 /* Port A */
   GPIO_StructInit(&GPIO_InitStructure);
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_15 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_15 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init( GPIOA, &GPIO_InitStructure);
 
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource2,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource3,GPIO_AF_LCD) ;
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource8,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource9,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOA, GPIO_PinSource10,GPIO_AF_LCD) ;
@@ -350,7 +351,7 @@ void Lcd_configure_GPIO(void)
 /* Configure Output for LCD */
 /* Port B */
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_8 | 
-  					GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_15;
+  					GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init( GPIOB, &GPIO_InitStructure);
 
@@ -361,7 +362,7 @@ void Lcd_configure_GPIO(void)
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource9,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource10,GPIO_AF_LCD) ;
   GPIO_PinAFConfig(GPIOB, GPIO_PinSource11,GPIO_AF_LCD) ;
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource15,GPIO_AF_LCD) ;
+  
 
 /* Configure Output for LCD */
 /* Port C*/

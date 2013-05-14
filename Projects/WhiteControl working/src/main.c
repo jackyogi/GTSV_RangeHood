@@ -72,9 +72,9 @@ int main(void)
 #endif
 
 	Cpu_to_default_config();
-	//RTC_to_default_config();
+	RTC_to_default_config();
 	Ports_to_default_config();
-  	//Lcd_to_default_config();
+  	Lcd_to_default_config();
 	Buzzer_timer_to_default_state();
 	Tsense_to_default_config();
 	//Timers_to_default_config();
@@ -163,24 +163,28 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
+	
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 
 //config GPIO for FAN: open drain w/ pull up
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_6;
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	//GPIO_Init(GPIOA, &GPIO_InitStructure);
-	//GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-	//GPIO_Init(GPIOB, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 //config GPIO for LMP  : open drain w/ pull up
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -189,7 +193,7 @@ void Ports_to_default_config(void)
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	//config GPIO for LCD
-	//Lcd_configure_GPIO();
+	Lcd_configure_GPIO();
 
 }
 
