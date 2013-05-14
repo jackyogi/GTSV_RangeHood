@@ -132,14 +132,14 @@ int main(void)
 void main_tick(void)
 {
 	Tsense_key_detect();  //must call this once in each main loop
-	Irr_key_detect1();
+	Irr_key_detect();
 	//Serial_key_detect();
 
 	main_big_switch();
 	
 //for any SYS State 
 	if(Tsense_check_key(TSENSE_KEY_LIGHT) 
- 			|| (tmp_ir_cmd == IRR_NEC_CMD_LIGHT)){
+ 			|| Irr_check_key(IRR_KEY_LIGHT)){
 		gSystemFlags.light_state ^= 1;
 		//send cmd for others to turn on lamp
 		//wait for confirm of lamp on (time out??)
@@ -450,7 +450,9 @@ void main_big_switch(void)
 		Lcd_fill_mins(0);		
 		//stop blinking if touching plus or minus 
 		if((Tsense_check_key_touching(TSENSE_KEY_PLUS))
-			 ||(Tsense_check_key_touching(TSENSE_KEY_MINUS))){
+			 	||Tsense_check_key_touching(TSENSE_KEY_MINUS)
+			 	|| Irr_check_key(IRR_KEY_PLUS)
+ 				|| Irr_check_key(IRR_KEY_MINUS)){
 			blinking_disable=1;
 		}else{
 			blinking_disable = 0;
@@ -472,15 +474,18 @@ void main_big_switch(void)
 		gSystemFlags.time_adj_delay++;
 		//reset time_adj_delay if any key touched
 		if(Tsense_check_key_touching(TSENSE_KEY_PLUS)
-			 || Tsense_check_key_touching(TSENSE_KEY_MINUS)
-			 || Tsense_check_key(TSENSE_KEY_LIGHT)
-			 || Tsense_check_key_touching(TSENSE_KEY_LIGHT)
-			 || (tmp_ir_cmd == IRR_NEC_CMD_LIGHT))
+			 	|| Tsense_check_key_touching(TSENSE_KEY_MINUS)
+			 	|| Tsense_check_key(TSENSE_KEY_LIGHT)
+			 	|| Tsense_check_key_touching(TSENSE_KEY_LIGHT)
+			 	|| Irr_check_key(IRR_KEY_PLUS)
+				|| Irr_check_key(IRR_KEY_MINUS)
+				|| Irr_check_key(IRR_KEY_LIGHT)
+			 )
 			gSystemFlags.time_adj_delay =0;
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)
-		      || (Tsense_check_key_holding(TSENSE_KEY_PLUS) && gSystemFlags.ms500_flag)
-		      || (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP)){
+		      	|| (Tsense_check_key_holding(TSENSE_KEY_PLUS) && gSystemFlags.ms500_flag)
+		      	|| Irr_check_key(IRR_KEY_PLUS)){
 		    gSystemFlags.ms500_flag =0;
 		    gSystemFlags.time_adj_delay = 0;
 			if(gSystemFlags.blower_apo_mins_tmp == 15)
@@ -490,8 +495,8 @@ void main_big_switch(void)
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)
-		      || (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms500_flag)
-		      || (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+		      	|| (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms500_flag)
+		      	|| Irr_check_key(IRR_KEY_MINUS) ){
 		    gSystemFlags.ms500_flag =0;
 		    gSystemFlags.time_adj_delay = 0;
 			if(gSystemFlags.blower_apo_mins_tmp == 1)
@@ -501,8 +506,7 @@ void main_big_switch(void)
 		}
 		//key auto
 		if(Tsense_check_key(TSENSE_KEY_AUTO)
-			    || (tmp_ir_cmd == IRR_NEC_CMD_AUTO)
-			    || (tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			    || Irr_check_key(IRR_KEY_AUTO)){
 			Blower_set_speed(0);
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
 			Lcd_clear();
@@ -510,7 +514,7 @@ void main_big_switch(void)
 		}
 		//key Timer
 		if(Tsense_check_key(TSENSE_KEY_TIMER) 
-			  || (tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+			  	|| Irr_check_key(IRR_KEY_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_icon_off(LCD_CLOCK_ICON);
 			Lcd_icon_off(LCD_COLON_ICON);
@@ -553,7 +557,7 @@ void main_big_switch(void)
 		////*****check keys
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)
-			   || (tmp_ir_cmd == IRR_NEC_CMD_SPEEDUP) ){
+			   	|| Irr_check_key(IRR_KEY_PLUS) ){
 			if(gSystemFlags.blower_fan_speed == 4){
 				Blower_set_speed(0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
@@ -565,7 +569,7 @@ void main_big_switch(void)
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)
-			 || (tmp_ir_cmd == IRR_NEC_CMD_SPEEDDOWN) ){
+			 	|| Irr_check_key(IRR_KEY_MINUS) ){
 			
 			if(gSystemFlags.blower_fan_speed == 1){
 				Blower_set_speed(0);
@@ -578,8 +582,7 @@ void main_big_switch(void)
 		}
 		//key auto
 		if(Tsense_check_key(TSENSE_KEY_AUTO)
-			    || (tmp_ir_cmd == IRR_NEC_CMD_AUTO)
-			    || (tmp_ir_cmd == IRR_NEC_CMD_ONOFF)){
+			    || Irr_check_key(IRR_KEY_AUTO) ){
 			Blower_set_speed(0);
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
 			Lcd_clear();
@@ -590,7 +593,7 @@ void main_big_switch(void)
 		//key timer up & not holding
 		if((Tsense_check_key_up(TSENSE_KEY_TIMER)
 			  && (!Tsense_check_key_holding(TSENSE_KEY_TIMER)))
-			     || (tmp_ir_cmd == IRR_NEC_CMD_TIMER)){
+			     || Irr_check_key(IRR_KEY_TIMER)){
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_icon_off(LCD_CLOCK_ICON);
 			//Lcd_clear();

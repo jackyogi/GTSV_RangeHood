@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Project/STM32L1xx_StdPeriph_Template/main.h 
+  * @file    Project/STM32L1xx_StdPeriph_Template/main.h
   * @author  MCD Application Team
   * @version V1.0.0
   * @date    13-September-2011
@@ -17,8 +17,8 @@
   *
   * <h2><center>&copy; COPYRIGHT 2010 STMicroelectronics</center></h2>
   ******************************************************************************
-  */ 
-  
+  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __IRREMOTE_H_INCLUDED
 #define __IRREMOTE_H_INCLUDED
@@ -52,11 +52,11 @@
 #define IRR_NUM_OF_KEYS			5
 /* Exported types ------------------------------------------------------------*/
 enum Irr_Key_Enum_t{
-	IRR_KEY_PLUS,
-	IRR_KEY_MINUS,
-	IRR_KEY_TIMER,
-	IRR_KEY_AUTO,
-	IRR_KEY_LIGHT
+	IRR_KEY_PLUS=0,
+	IRR_KEY_MINUS=1,
+	IRR_KEY_TIMER=2,
+	IRR_KEY_AUTO=3,
+	IRR_KEY_LIGHT=4
 };
 
 //ir recv states
@@ -102,11 +102,11 @@ void Irr_init(void);
 int Irr_decode(struct irr_decode_results_t *results);
 void Irr_resume(void);
 void Irr_key_detect(void);
+void Irr_key_detect1(void);
 
-uint8_t Irr_key_check_rising(enum Irr_key_enum_t key);
-uint8_t Irr_key_check_falling(enum Irr_key_enum_t key);
 
-bool Irr_check_key_push(enum Irr_Key_Enum_t key);
+
+bool Irr_check_key(enum Irr_Key_Enum_t key);
 
 
 

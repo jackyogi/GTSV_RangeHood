@@ -6,7 +6,7 @@
 #define GPIOx_IDR_OFFSET	0x10   		//the offset of IDR register
 #define IRR_SENS_DATA_ADDRESS		((volatile uint8_t *) \
 			(BITBAND_PERI(GPIOB_BASE+GPIOx_IDR_OFFSET, IRR_SENS_PIN)))
-			
+
 #define IRR_TIMER_TICK_us	50		//microseconds per clock interupt tick
 
 
@@ -34,8 +34,8 @@
 #define IRR_SUCCESS_CODE	1
 
 #define TOLERANCE 25  // percent tolerance in measurements
-#define LTOL (1.0 - TOLERANCE/100.) 
-#define UTOL (1.0 + TOLERANCE/100.) 
+#define LTOL (1.0 - TOLERANCE/100.)
+#define UTOL (1.0 + TOLERANCE/100.)
 
 
 #define TICKS_LOW(us) (int) (((us)*LTOL/IRR_TIMER_TICK_us))
@@ -56,7 +56,7 @@ void Irr_init(void)
 
 int MATCH(int measured_ticks, int desired_us)
 {
-	return ( (measured_ticks>= TICKS_LOW(desired_us)) 
+	return ( (measured_ticks>= TICKS_LOW(desired_us))
 		  && (measured_ticks<= TICKS_HIGH(desired_us)) );
 }
 
@@ -74,7 +74,7 @@ int decodeNEC(struct irr_decode_results_t *results){
 	uint32_t data = 0;
 	int offset =1; //Skip first space
 	int i;
-	
+
 	//Initial mark
 	if(!MATCH_MARK(results->rawbuff[offset], NEC_HDR_MARK)){
 		return IRR_ERR_CODE;
@@ -87,9 +87,9 @@ int decodeNEC(struct irr_decode_results_t *results){
 		results->decode_type = IRR_DECODE_NEC;
 		results->value = IRR_NEC_REPEAT;
 		results->value_bit_len = 0;
-		return IRR_SUCCESS_CODE;		
+		return IRR_SUCCESS_CODE;
 	}
-	
+
 	if(irrparams.rawbuff_len < 2*IRR_NEC_BITS+4){
 		return IRR_ERR_CODE;
 	}
@@ -119,7 +119,7 @@ int decodeNEC(struct irr_decode_results_t *results){
 	results->value = data;
 	results->decode_type = IRR_DECODE_NEC;
 	return IRR_SUCCESS_CODE;
-	
+
 }
 
 
@@ -160,7 +160,7 @@ void Irr_key_detect1(void)
 			break;
 
 		case IRR_NEC_CMD_TIMER:
-			
+
 			Buzzer_bip();
 			break;
 		case IRR_NEC_CMD_AUTO:
@@ -197,9 +197,9 @@ struct Irr_Key_Detect_t _irr_keys[IRR_NUM_OF_KEYS];
 
 void Irr_key_detect(void)
 {
-	static uint32_t current_key, tmp_cmd;
+	static uint32_t  tmp_cmd;
 	int i;
-	
+
 	if(Irr_decode(&irr_decode_results)){
 		tmp_cmd= irr_decode_results.value;
 
