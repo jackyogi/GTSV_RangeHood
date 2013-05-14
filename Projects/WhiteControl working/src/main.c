@@ -163,7 +163,8 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_SetBits(GPIOA, GPIO_Pin_11);
+	//GPIO_SetBits(GPIOA, GPIO_Pin_11);
+	GPIO_ResetBits(GPIOA, GPIO_Pin_11);
 	
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
@@ -172,7 +173,8 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
-	GPIO_SetBits(GPIOC, GPIO_Pin_13);
+	//GPIO_SetBits(GPIOC, GPIO_Pin_13);
+	GPIO_ResetBits(GPIOC, GPIO_Pin_13);
 
 //config GPIO for FAN: open drain w/ pull up
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
