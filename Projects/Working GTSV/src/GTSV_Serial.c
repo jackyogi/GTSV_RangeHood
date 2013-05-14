@@ -121,13 +121,27 @@ void Serial_tx_ISR(void)
 
 }
 
+#define SERIAL_RX_FRAME_SOF	1
+#define SERIAL_RX_FRAME_EOF	0
+
 #define SERIAL_RX_STATE_IDLE	0
 #define SERIAL_RX_STATE_RECEIVING 	1
 void Serial_rx_ISR(void)
 {
+	static uint8_t serial_rx_state = SERIAL_RX_STATE_IDLE;
 	uint8_t recv_tmp;
 	recv_tmp = (uint8_t)(USART_ReceiveData(SERIAL_COM_PORT) & 0x00FF);
-	
+	if(serial_rx_state == SERIAL_RX_STATE_IDLE){
+		if(recv_tmp == SERIAL_RX_FRAME_SOF){
+			serial_rx_state = SERIAL_RX_STATE_RECEIVING;
+		}
+	} else if (serial_rx_state == SERIAL_RX_STATE_RECEIVING){
+		if(recv_tmp != SERIAL_RX_FRAME_EOF){ //not end of frame
+			_serial_parrams.buff
+		}else{
+			
+		}
+	}
 }
 
 bool Serial_check_cmd(enum Serial_Cmd_Enum_t cmd)
