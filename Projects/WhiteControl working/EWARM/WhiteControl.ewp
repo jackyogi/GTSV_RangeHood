@@ -1035,6 +1035,9 @@
       <name>$PROJ_DIR$\..\src\stm32l1xx_it.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\..\..\Libraries\STM32L1xx_StdPeriph_Driver\src\stm32l1xx_spi.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\src\system_stm32l1xx.c</name>
     </file>
   </group>

@@ -44,11 +44,23 @@ GPIO_InitTypeDef GPIO_InitStructure;
 EXTI_InitTypeDef EXTI_InitStructure;
 NVIC_InitTypeDef NVIC_InitStructure;
 TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+SPI_InitTypeDef SPI_InitStructure;
 
+uint8_t tmp_spi=0x10, spi_init[8] = {0x00, 0x40, 0xC0, 0xFF, 0xFF,
+								0xFF, 0xFF, 0x97};
 
 uint32_t myRam[16];
 uint32_t tmp_ir_cmd;
 uint8_t com_seg_set[2], com_seg_clear[2];
+
+
+void Spi_to_default_config(void);
+
+
+#define STB_SET_BIT		GPIO_SetBits(GPIOA, GPIO_Pin_3);
+#define STB_RESET_BIT	GPIO_ResetBits(GPIOA, GPIO_Pin_3);
+
+
 /*******************************************************************************/
 /**
   * @brief main entry point.
@@ -72,67 +84,102 @@ int main(void)
 #endif
 
 	Cpu_to_default_config();
-	RTC_to_default_config();
+	//RTC_to_default_config();
 	Ports_to_default_config();
-  	Lcd_to_default_config();
+	STB_SET_BIT
+  	//Lcd_to_default_config();
 	Buzzer_timer_to_default_state();
-	Tsense_to_default_config();
+	//Tsense_to_default_config();
 	//Timers_to_default_config();
+	Spi_to_default_config();
 
-	LED_ALL = 1;
 
-	/*Until application reset*/
+
+	STB_SET_BIT	
+	while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY)){}
+	STB_RESET_BIT
+	SPI1->DR = spi_init[0];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	STB_SET_BIT
+
+
+	STB_RESET_BIT
+	SPI1->DR = spi_init[1];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	STB_SET_BIT
+
+
+	STB_RESET_BIT
+	SPI1->DR = spi_init[2];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	SPI1->DR = spi_init[3];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	SPI1->DR = spi_init[4];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	SPI1->DR = spi_init[5];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	SPI1->DR = spi_init[6];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	
+	for(i=0; i<0x0F ; i++){
+		SPI1->DR = 0xFF;
+		while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	}
+
+	STB_SET_BIT
+
+	STB_RESET_BIT
+	SPI1->DR = spi_init[7];
+	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+	STB_SET_BIT
+
+
 	while (1)
 	{
-		/* Run TSL RC state machine */
-	  	TSL_Action();;
+
 		if(gSystemFlags.ms100_flag){
 			gSystemFlags.ms100_flag = 0;
-			Lcd_blink_systicISR_ms();
+
 		}
-				
-		for(i=0; i<9; i++){
-			//LCD->RAM[i] = myRam[i];
-			//Lcd_fill_pos_with_num(i, i);
-		}
-		
+
+		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+
+		SPI1->DR = tmp_spi;
+		while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
 		if(gSystemFlags.ms500_flag){
 			gSystemFlags.ms500_flag=0;
-			//LED_ALL ^= 1;
 			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-			Lcd_fill_pos_with_double_digit_num(0, RTC_TimeStructure.RTC_Hours);
-			Lcd_fill_pos_with_double_digit_num(1, RTC_TimeStructure.RTC_Minutes);
-			Lcd_fill_pos_with_double_digit_num(2, RTC_TimeStructure.RTC_Seconds);
-		}
-		
-		Lcd_fill_pos_with_num(8, 2);
-		Lcd_icon_on(LCD_ICON_LIGHT);
-		if(Lcd_get_blink_cursor()){
-			Lcd_icon_on(LCD_ICON_COLON1);
-			Lcd_icon_on(LCD_ICON_CLOCK);
-		}else{
-			Lcd_icon_off(LCD_ICON_COLON1);
-			Lcd_icon_off(LCD_ICON_CLOCK);
+
+			SPI1->DR = tmp_spi;
+			while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+
 		}
 
-		Lcd_icon_fan(Lcd_get_fan_cursor_slow());
-		
-		LCD_UpdateDisplayRequest();
 
 	}
 }
 
 
 
-void Cpu_to_default_config(void)
+void Spi_to_default_config(void)
 {
-	if (SysTick_Config(SystemCoreClock / 1000)){
-		//printf("ERROR: SysTick_Config failed\n");
-	} else {
-		//printf("SysTick_Config success!\n");
-		NVIC_SetPriority(SysTick_IRQn, (1 << __NVIC_PRIO_BITS) - 2);
-	}
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+	SPI_I2S_DeInit(SPI1);
+	SPI_InitStructure.SPI_Direction = SPI_Direction_1Line_Tx;
+	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+	SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;
+	SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128;
+	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_LSB;
+	SPI_InitStructure.SPI_CRCPolynomial = 7;
+	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+  	SPI_Init(SPI1, &SPI_InitStructure);
+	//SPI_SSOutputCmd(SPI1, ENABLE);
+	SPI_Cmd(SPI1, ENABLE);
 }
+
+
 
 /**
   * @brief  To initialize the I/O ports
@@ -165,7 +212,7 @@ void Ports_to_default_config(void)
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	//GPIO_SetBits(GPIOA, GPIO_Pin_11);
 	GPIO_ResetBits(GPIOA, GPIO_Pin_11);
-	
+
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -195,9 +242,45 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	//config GPIO for LCD
-	Lcd_configure_GPIO();
+//config GPIO for SPI1
+	//for STB pins
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+
+
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init( GPIOA, &GPIO_InitStructure);
+
+  	//GPIO_PinAFConfig(GPIOB, GPIO_PinSource12,GPIO_AF_SPI1);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5,GPIO_AF_SPI1);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7,GPIO_AF_SPI1);
+
+}
+
+void Cpu_to_default_config(void)
+{
+	if (SysTick_Config(SystemCoreClock / 1000)){
+		//printf("ERROR: SysTick_Config failed\n");
+	} else {
+		//printf("SysTick_Config success!\n");
+		NVIC_SetPriority(SysTick_IRQn, (1 << __NVIC_PRIO_BITS) - 2);
+	}
 }
 
 
