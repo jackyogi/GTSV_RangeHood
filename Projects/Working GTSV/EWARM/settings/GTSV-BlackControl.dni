@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-1702405054
+Checksum=187097544
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -60,11 +60,12 @@ Fmt9=RTC_TimeTypeDef-RTC_Seconds	3	0
 Fmt10=struct Serial_Cmd_Result_t-data_len	3	0
 Fmt11=struct Serial_Cmd_Result_t-raw_buff	3	0
 Fmt12=struct Serial_Cmd_Result_t-raw_buff_len	3	0
-Fmt13=struct Serial_Parrams_t-nbr_of_cmd_in_buff	3	0
-Fmt14=struct Serial_Parrams_t-next_cmd_idx	3	0
-Fmt15=struct Serial_Parrams_t-receiving_cmd_idx	3	0
-Fmt16=struct irr_decode_results_t-value	4	0
-Fmt17=struct irr_decode_results_t-value_bit_len	4	0
+Fmt13=struct Serial_Parrams_t-light_state	4	0
+Fmt14=struct Serial_Parrams_t-nbr_of_cmd_in_buff	3	0
+Fmt15=struct Serial_Parrams_t-next_cmd_idx	3	0
+Fmt16=struct Serial_Parrams_t-receiving_cmd_idx	3	0
+Fmt17=struct irr_decode_results_t-value	4	0
+Fmt18=struct irr_decode_results_t-value_bit_len	4	0
 [array_types]
 Fmt0=uint32_t[3]	4	0
 Fmt1=uint32_t[8]	1	0

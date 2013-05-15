@@ -104,8 +104,10 @@ void Serial_cmd_detect(void)
 
 		switch(tmp_cmd){
 		case SERIAL_CMD_LIGHT:
-			_serial_cmd_detect[SERIAL_CMD_LIGHT].active = 1;
-			//Buzzer_bip();
+			if(data_len == 1){
+				_serial_cmd_detect[SERIAL_CMD_LIGHT].active = 1;
+				_serial_parrams.light_state = *pdata;
+			}
 			break;
 		case SERIAL_CMD_PLUS:
 			_serial_cmd_detect[SERIAL_CMD_PLUS].active = 1;
@@ -135,6 +137,16 @@ void Serial_cmd_detect(void)
 				}
 				_serial_parrams.other_uid_valid=1;
 			}
+			break;
+		case SERIAL_CMD_TMP_TIME:
+			if(data_len == 2){
+				_serial_parrams.tmp_hrs = *(pdata+1);
+				_serial_parrams.tmp_mins = *(pdata);
+				_serial_cmd_detect[SERIAL_CMD_TMP_TIME].active = 1;
+			}
+			break;
+		case SERIAL_CMD_RESET_TIME_ADJ_DELAY:
+			_serial_cmd_detect[SERIAL_CMD_RESET_TIME_ADJ_DELAY].active = 1;
 			break;
 		default:
 			//while(1);
@@ -304,7 +316,30 @@ void Serial_send_bytes(uint8_t *p_tx, uint8_t nbr_of_bytes)
 
 }
 
+void Serial_send_cmd_light()
+{
+	uint8_t tx_tmp[5];
+	tx_tmp[0] = SERIAL_RX_FRAME_SOF;
+	tx_tmp[1] = SERIAL_CMD_LIGHT;
+	tx_tmp[2] = 1;
+	tx_tmp[3] = gSystemFlags.light_state;
+	tx_tmp[4] =  SERIAL_RX_FRAME_EOF;
+	Serial_send_bytes(tx_tmp, 5);
 
+
+}
+void Serial_send_tmp_time(void)
+{
+	uint8_t tx_tmp[6];
+	tx_tmp[0] = SERIAL_RX_FRAME_SOF;
+	tx_tmp[1] = SERIAL_CMD_TMP_TIME;
+	tx_tmp[2] = 2;
+	tx_tmp[3] = gSystemFlags.tmp_min;
+	tx_tmp[4] = gSystemFlags.tmp_hour;
+	tx_tmp[5] = SERIAL_RX_FRAME_EOF;
+	Serial_send_bytes(tx_tmp, 6);
+
+}
 
 void Serial_send_my_uid(void){
 	uint8_t i;
@@ -375,7 +410,7 @@ void Usart_to_default_config(void)
 	- Hardware flow control disabled (RTS and CTS signals)
 	- Receive and transmit enabled
 	*/
-	USART_InitStructure.USART_BaudRate = 9600;
+	USART_InitStructure.USART_BaudRate = 1200;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;

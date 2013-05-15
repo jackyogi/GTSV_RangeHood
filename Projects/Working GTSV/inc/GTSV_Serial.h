@@ -17,6 +17,7 @@ enum Serial_Cmd_Enum_t {
 	SERIAL_CMD_REQUEST_UID=6,
 	SERIAL_CMD_ACK=7,
 	SERIAL_CMD_TMP_TIME,
+	SERIAL_CMD_RESET_TIME_ADJ_DELAY,
 	SERIAL_TOTAL_CMD
 };
 
@@ -41,7 +42,12 @@ struct Serial_Parrams_t {
 	uint8_t receiving_cmd_idx;
 	
 	uint8_t other_uid[12];  //96bits uid
+	
+	uint8_t tmp_mins;
+	uint8_t tmp_hrs;
 	unsigned other_uid_valid:1;
+	uint8_t light_state;
+	
 };
 
 
@@ -70,6 +76,9 @@ void Serial_send_my_uid(void);
 void Serial_send_cmd(enum Serial_Cmd_Enum_t cmd);
 uint8_t * Serial_get_other_uid(void);
 void Serial_time_out_tick(void);
+void Serial_send_tmp_time(void);
+void Serial_send_cmd_light(void);
+
 
 #endif
 
