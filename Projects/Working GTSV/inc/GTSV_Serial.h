@@ -8,14 +8,15 @@
 
 
 enum Serial_Cmd_Enum_t {
-	SERIAL_CMD_LIGHT,
-	SERIAL_CMD_PLUS,
-	SERIAL_CMD_MINUS,
-	SERIAL_CMD_TIMER,
-	SERIAL_CMD_AUTO,
-	SERIAL_CMD_UID,
-	SERIAL_CMD_ACK,
-	SERIAL_TOTAL_CMD
+	SERIAL_CMD_LIGHT=0,
+	SERIAL_CMD_PLUS=1,
+	SERIAL_CMD_MINUS=2,
+	SERIAL_CMD_TIMER=3,
+	SERIAL_CMD_AUTO=4,
+	SERIAL_CMD_UID=5,
+	SERIAL_CMD_REQUEST_UID=6,
+	SERIAL_CMD_ACK=7,
+	SERIAL_TOTAL_CMD=8
 };
 
 
@@ -29,11 +30,11 @@ enum Serial_Cmd_Enum_t {
 
 struct Serial_Parrams_t {
 	uint8_t buff[SERIAL_RX_NUM_OF_CMD][SERIAL_RX_CMD_SIZE];
-	uint8_t nbr_of_cmd;  //number of unprocessed cmd in buff
+	uint8_t nbr_of_cmd_in_buff;  //number of unprocessed cmd in buff
 	uint8_t next_cmd_idx;
 	uint8_t receiving_cmd_idx;
 	
-	uint32_t other_uid[3];
+	uint8_t other_uid[12];  //96bits uid
 	unsigned other_uid_valid:1;
 };
 
@@ -59,7 +60,9 @@ void Serial_cmd_detect(void);
 bool Serial_check_cmd(enum Serial_Cmd_Enum_t cmd);
 void Serial_cmd_detect(void);
 
-
+void Serial_send_my_uid(void);
+void Serial_send_cmd(enum Serial_Cmd_Enum_t cmd);
+uint8_t * Serial_get_other_uid(void);
 
 #endif
 

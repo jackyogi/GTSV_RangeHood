@@ -100,7 +100,7 @@ struct SystemFlags {
 	RTC_TimeTypeDef blower_apo_end;
 	uint16_t blower_apo_remaining_sec;
 
-	uint32_t system_uid[3];
+	uint8_t system_uid[12];
 	
 	
 };
@@ -134,6 +134,8 @@ extern uint32_t tmp_ir_cmd;
 #define U_ID_0 (*(uint32_t*) 0x1FF80050)
 #define U_ID_1 (*(uint32_t*) 0x1FF80054)
 #define U_ID_2 (*(uint32_t*) 0x1FF80058)
+
+#define MY_UID_0_ADDR	((uint8_t*) 0x1FF80050)
 
 #define BITBAND_POINTER_AT(a,b)\
 			*((volatile unsigned char *)(BITBAND_PERI(a,b)))
@@ -187,6 +189,9 @@ extern uint32_t tmp_ir_cmd;
 void Cpu_to_default_config(void);
 void Get_system_clk_config(void);
 void Ports_to_default_config(void);
+void Ports_to_input_slave_config(void);
+void Ports_to_output_master_config(void);
+
 void Timers_to_default_config(void);
 
 

@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-32402738
+Checksum=795333581
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -57,11 +57,18 @@ Fmt6=RTC_TimeTypeDef-RTC_H12	3	0
 Fmt7=RTC_TimeTypeDef-RTC_Hours	3	0
 Fmt8=RTC_TimeTypeDef-RTC_Minutes	3	0
 Fmt9=RTC_TimeTypeDef-RTC_Seconds	3	0
-Fmt10=struct irr_decode_results_t-value	4	0
-Fmt11=struct irr_decode_results_t-value_bit_len	4	0
+Fmt10=struct Serial_Cmd_Result_t-data_len	3	0
+Fmt11=struct Serial_Cmd_Result_t-raw_buff	3	0
+Fmt12=struct Serial_Cmd_Result_t-raw_buff_len	3	0
+Fmt13=struct Serial_Parrams_t-nbr_of_cmd_in_buff	3	0
+Fmt14=struct Serial_Parrams_t-next_cmd_idx	3	0
+Fmt15=struct Serial_Parrams_t-receiving_cmd_idx	3	0
+Fmt16=struct irr_decode_results_t-value	4	0
+Fmt17=struct irr_decode_results_t-value_bit_len	4	0
 [array_types]
 Fmt0=uint32_t[3]	4	0
 Fmt1=uint32_t[8]	1	0
+Fmt2=uint8_t[12]	4	0
 [watch_formats]
 Fmt0={W}42:*test_bit	1	0
 Fmt1={W}42:0x40000000 + 0x2400	4	0
@@ -89,6 +96,10 @@ GraphEnabled=0
 ShowTimeLog=1
 ShowTimeSum=1
 SumSortOrder=0
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Count=0
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -96,6 +107,9 @@ Category=_ 0
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
+[Aliases]
+Count=0
+SuppressDialog=0
 [Trace2]
 Enabled=0
 ShowSource=0
@@ -116,10 +130,3 @@ Mode=3
 Graph=0
 Symbiont=0
 Exclusions=
-[Disassemble mode]
-mode=0
-[Breakpoints2]
-Count=0
-[Aliases]
-Count=0
-SuppressDialog=0

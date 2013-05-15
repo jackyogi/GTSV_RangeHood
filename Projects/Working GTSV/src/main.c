@@ -90,7 +90,8 @@ int main(void)
        To reconfigure the default setting of SystemInit() function, refer to
        system_stm32l1xx.c file
      */
-
+	int i;
+ 	uint8_t *pu8_tmp;
 	/* Check if the StandBy flag is set */
 	if (PWR_GetFlagStatus(PWR_FLAG_SB) != RESET)
 	{
@@ -106,9 +107,9 @@ int main(void)
 		//StanbyWakeUp = FALSE;
 	}
 
-	gSystemFlags.system_uid[0] = U_ID_0;
-	gSystemFlags.system_uid[1] = U_ID_1;
-	gSystemFlags.system_uid[2] = U_ID_2;
+
+
+	
 
 #ifdef DEBUG
 	//get system config for debug purposes
@@ -126,18 +127,33 @@ int main(void)
 
 	Tsense_to_default_config();
 
-	//printf("UID = %08X-%08X-%08X\r\n", gSystemFlags.system_uid[0], gSystemFlags.system_uid[1], gSystemFlags.system_uid[2]);
-	while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET) {}
+	//get my UID
+	pu8_tmp = MY_UID_0_ADDR;
+	for(i=0; i<12; i++){
+		gSystemFlags.system_uid[i] = *pu8_tmp;
+		pu8_tmp++;
+	}
+	//printf("\nUID = %08X-%08X-%08X\r\n", U_ID_0, U_ID_1, U_ID_2);
+	//while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET) {}
 
 	//send UID 0, 1, 2 "my UID1 %d"
 	//wait (SERIAL_TIMEOUT) until recieve a UID
 	//if(receive a UID) --> compare lower means input slave
+	
+	Serial_send_my_uid();
+	Serial_send_cmd(SERIAL_CMD_REQUEST_UID); //request other's UID
+	for(i=0; i<68; i++){
+		Serial_send_my_uid();
+	}
+	
 
-  /*Until application reset*/
   while (1)
   {
 	// Run TSL RC state machine
 	TSL_Action();
+
+
+	
 	main_tick();
 	//make sure main_tick update longer than MAIN_TICK_MS
 	if(gSystemFlags.msMainTick){
@@ -154,9 +170,32 @@ int main(void)
 
 void main_tick(void)
 {
+	uint8_t *other_uid;
+	uint8_t i;
+	
 	Tsense_key_detect();  //must call this once in each main loop
 	Irr_key_detect();
 	Serial_cmd_detect();
+	
+	//check & abitrate for working mode
+	other_uid = Serial_get_other_uid();
+	if(other_uid != NULL){
+		i=0;
+		//find the first diff value
+		while(gSystemFlags.system_uid[i]== *(other_uid+i)){
+			i++;
+		}
+		//compare
+		if(gSystemFlags.system_uid[i] > *(other_uid+i)){
+			gSystemFlags.working_mode = WORKING_OUTPUT_MASTER;				
+		}else{
+			gSystemFlags.working_mode = WORKING_INPUT_SLAVE;
+		}
+	} else {//I'm alone so I'm Master
+		gSystemFlags.working_mode = WORKING_OUTPUT_MASTER;
+	}
+	
+
 
 	main_big_switch();
 
@@ -190,6 +229,24 @@ void main_tick(void)
 		LED_BACKLIGHT_ON;
 	}
 
+
+
+
+	
+	if(gSystemFlags.working_mode== WORKING_INPUT_SLAVE){
+		Ports_to_input_slave_config();
+		//Lcd_icon_off(LCD_ROTATE_ICON);
+	}
+	//for debug purpose both input
+	if(gSystemFlags.working_mode == WORKING_OUTPUT_MASTER){
+		Ports_to_input_slave_config();
+		//Lcd_icon_on(LCD_ROTATE_ICON);
+	}
+	if(_serial_parrams.other_uid_valid)
+		Lcd_icon_on(LCD_LIGHTBULB_ICON);
+	else
+		Lcd_icon_off(LCD_LIGHTBULB_ICON);
+
 	LCD_UpdateDisplayRequest();
 }
 
@@ -211,7 +268,11 @@ void main_big_switch(void)
 		//*****check keys
 		//key Timer
 		if(Tsense_check_key(TSENSE_KEY_TIMER)
-			  || Irr_check_key(IRR_KEY_TIMER)){
+			  || Irr_check_key(IRR_KEY_TIMER)
+			  || Serial_check_cmd(SERIAL_CMD_TIMER)){
+
+			if(!Serial_check_cmd(SERIAL_CMD_TIMER))
+				Serial_send_cmd(SERIAL_CMD_TIMER);
 			gSystemFlags.tmp_hour = RTC_TimeStructure.RTC_Hours;
 			gSystemFlags.tmp_min = RTC_TimeStructure.RTC_Minutes;
 			gSystemFlags.time_adj_stage =0;
@@ -222,7 +283,11 @@ void main_big_switch(void)
 		}
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)
-			  || Irr_check_key(IRR_KEY_PLUS) ){
+			  || Irr_check_key(IRR_KEY_PLUS) 
+			  || Serial_check_cmd(SERIAL_CMD_PLUS)){
+
+			if(!Serial_check_cmd(SERIAL_CMD_PLUS))
+				Serial_send_cmd(SERIAL_CMD_PLUS)
 			Blower_set_speed(1);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
@@ -657,6 +722,8 @@ void main_big_switch(void)
 
 void Blower_set_speed(uint8_t spd)
 {
+	
+	
 	switch(spd){
 	case 1:
 		gSystemFlags.blower_fan_speed = 1;
@@ -726,7 +793,14 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_USART1);
@@ -764,8 +838,35 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
+	Ports_to_input_slave_config();
 
-//config GPIO for FAN:
+
+}
+
+void Ports_to_input_slave_config(void)
+{
+	//config GPIO for FAN:
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+//config GPIO for LMP  :
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+}
+
+void Ports_to_output_master_config(void)
+{
+	//config GPIO for FAN:
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -775,17 +876,14 @@ void Ports_to_default_config(void)
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 //config GPIO for LMP  :
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
-
-
 void Timers_to_default_config(void)
 {
 
