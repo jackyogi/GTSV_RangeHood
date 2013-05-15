@@ -109,7 +109,7 @@ int main(void)
 
 
 
-	
+
 
 #ifdef DEBUG
 	//get system config for debug purposes
@@ -139,13 +139,12 @@ int main(void)
 	//send UID 0, 1, 2 "my UID1 %d"
 	//wait (SERIAL_TIMEOUT) until recieve a UID
 	//if(receive a UID) --> compare lower means input slave
-	
-	Serial_send_my_uid();
-	Serial_send_cmd(SERIAL_CMD_REQUEST_UID); //request other's UID
-	for(i=0; i<68; i++){
+
+
+	for(i=0; i<8; i++){
 		Serial_send_my_uid();
 	}
-	
+
 
   while (1)
   {
@@ -153,7 +152,7 @@ int main(void)
 	TSL_Action();
 
 
-	
+
 	main_tick();
 	//make sure main_tick update longer than MAIN_TICK_MS
 	if(gSystemFlags.msMainTick){
@@ -172,11 +171,11 @@ void main_tick(void)
 {
 	uint8_t *other_uid;
 	uint8_t i;
-	
+
 	Tsense_key_detect();  //must call this once in each main loop
 	Irr_key_detect();
 	Serial_cmd_detect();
-	
+
 	//check & abitrate for working mode
 	other_uid = Serial_get_other_uid();
 	if(other_uid != NULL){
@@ -187,14 +186,14 @@ void main_tick(void)
 		}
 		//compare
 		if(gSystemFlags.system_uid[i] > *(other_uid+i)){
-			gSystemFlags.working_mode = WORKING_OUTPUT_MASTER;				
+			gSystemFlags.working_mode = WORKING_OUTPUT_MASTER;
 		}else{
 			gSystemFlags.working_mode = WORKING_INPUT_SLAVE;
 		}
 	} else {//I'm alone so I'm Master
 		gSystemFlags.working_mode = WORKING_OUTPUT_MASTER;
 	}
-	
+
 
 
 	main_big_switch();
@@ -232,20 +231,24 @@ void main_tick(void)
 
 
 
-	
+
 	if(gSystemFlags.working_mode== WORKING_INPUT_SLAVE){
 		Ports_to_input_slave_config();
-		//Lcd_icon_off(LCD_ROTATE_ICON);
+		Lcd_icon_off(LCD_ROTATE_ICON);
 	}
 	//for debug purpose both input
 	if(gSystemFlags.working_mode == WORKING_OUTPUT_MASTER){
 		Ports_to_input_slave_config();
-		//Lcd_icon_on(LCD_ROTATE_ICON);
+		Lcd_icon_on(LCD_ROTATE_ICON);
 	}
 	if(_serial_parrams.other_uid_valid)
 		Lcd_icon_on(LCD_LIGHTBULB_ICON);
 	else
 		Lcd_icon_off(LCD_LIGHTBULB_ICON);
+	if(serial_rx_state == SERIAL_RX_STATE_IDLE)
+		Lcd_icon_on(LCD_CLOCK_ICON);
+	else
+		Lcd_icon_off(LCD_CLOCK_ICON);
 
 	LCD_UpdateDisplayRequest();
 }
@@ -283,11 +286,11 @@ void main_big_switch(void)
 		}
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)
-			  || Irr_check_key(IRR_KEY_PLUS) 
+			  || Irr_check_key(IRR_KEY_PLUS)
 			  || Serial_check_cmd(SERIAL_CMD_PLUS)){
 
 			if(!Serial_check_cmd(SERIAL_CMD_PLUS))
-				Serial_send_cmd(SERIAL_CMD_PLUS)
+				Serial_send_cmd(SERIAL_CMD_PLUS);
 			Blower_set_speed(1);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
@@ -295,7 +298,11 @@ void main_big_switch(void)
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)
-			   || Irr_check_key(IRR_KEY_MINUS)){
+			   || Irr_check_key(IRR_KEY_MINUS)
+			   || Serial_check_cmd(SERIAL_CMD_MINUS)){
+
+			if(!Serial_check_cmd(SERIAL_CMD_MINUS))
+				Serial_send_cmd(SERIAL_CMD_MINUS);
 			Blower_set_speed(4);
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Lcd_clear();
@@ -303,7 +310,10 @@ void main_big_switch(void)
 		}
 		//key auto
 		if(Tsense_check_key(TSENSE_KEY_AUTO)
-			  || Irr_check_key(IRR_KEY_AUTO)){
+			  || Irr_check_key(IRR_KEY_AUTO)
+			  || Serial_check_cmd(SERIAL_CMD_AUTO)){
+			if(!Serial_check_cmd(SERIAL_CMD_AUTO))
+				Serial_send_cmd(SERIAL_CMD_AUTO);
 			gSystemFlags.sys_state = SYS_STATE_AUTO;
 			//Lcd_clear();
 
@@ -325,7 +335,11 @@ void main_big_switch(void)
 		//*****check keys
 		//key Auto
 		if(Tsense_check_key(TSENSE_KEY_AUTO)
-			  || Irr_check_key(IRR_KEY_AUTO)){
+			  || Irr_check_key(IRR_KEY_AUTO)
+			  || Serial_check_cmd(SERIAL_CMD_AUTO)){
+			  
+			if(!Serial_check_cmd(SERIAL_CMD_AUTO))
+				Serial_send_cmd(SERIAL_CMD_AUTO);
 			gSystemFlags.sys_state = SYS_STATE_OFF;
 			//Lcd_clear();
 			Lcd_icon_off(LCD_ROTATE_ICON);
@@ -722,8 +736,8 @@ void main_big_switch(void)
 
 void Blower_set_speed(uint8_t spd)
 {
-	
-	
+
+
 	switch(spd){
 	case 1:
 		gSystemFlags.blower_fan_speed = 1;

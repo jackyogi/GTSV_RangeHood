@@ -17,7 +17,14 @@ struct Serial_Cmd_Result_t _serial_cmd_results;
 struct Serial_Cmd_Detect_t {
 	unsigned active:1;
 	unsigned hold:1;
-} _serial_cmd_detect[SERIAL_TOTAL_CMD];
+};
+volatile struct Serial_Cmd_Detect_t _serial_cmd_detect[SERIAL_TOTAL_CMD];
+
+volatile uint16_t _serial_time_out_cnt;
+
+void Serial_time_out_begin(void);
+
+
 
 
 bool Serial_cmd_do_decode(struct Serial_Cmd_Result_t *results)
@@ -65,7 +72,7 @@ bool Serial_cmd_decode(struct Serial_Cmd_Result_t *results)
 	if(_serial_parrams.nbr_of_cmd_in_buff>0){  //if has at least one cmd in buff
 		results->raw_buff_len = _serial_parrams.buff[_serial_parrams.next_cmd_idx][0];  //data len
 		results->raw_buff = &(_serial_parrams.buff[_serial_parrams.next_cmd_idx][1]);
-		results->cmd = *(results->raw_buff);
+		results->cmd = (enum Serial_Cmd_Enum_t)_serial_parrams.buff[_serial_parrams.next_cmd_idx][1];
 		_serial_parrams.nbr_of_cmd_in_buff--;
 		_serial_parrams.next_cmd_idx++;
 		if(_serial_parrams.next_cmd_idx == SERIAL_RX_NUM_OF_CMD)
@@ -85,11 +92,15 @@ bool Serial_cmd_decode(struct Serial_Cmd_Result_t *results)
 
 void Serial_cmd_detect(void)
 {
-	static uint8_t tmp_cmd;
-	int i;
+	uint8_t i;
+	uint8_t tmp_cmd;
+	uint8_t data_len;
+	uint8_t *pdata;
+	pdata = &(_serial_parrams.buff[_serial_parrams.next_cmd_idx][3]);
+	data_len = _serial_parrams.buff[_serial_parrams.next_cmd_idx][2];
 
-	if(Serial_cmd_decode(&_serial_cmd_results)){
-		tmp_cmd = _serial_cmd_results.cmd;
+	if(_serial_parrams.nbr_of_cmd_in_buff>0){
+		tmp_cmd = (enum Serial_Cmd_Enum_t)_serial_parrams.buff[_serial_parrams.next_cmd_idx][1];
 
 		switch(tmp_cmd){
 		case SERIAL_CMD_LIGHT:
@@ -112,13 +123,75 @@ void Serial_cmd_detect(void)
 			_serial_cmd_detect[SERIAL_CMD_AUTO].active = 1;
 			//Buzzer_bip();
 			break;
+		case SERIAL_CMD_REQUEST_UID:
+			_serial_cmd_detect[SERIAL_CMD_REQUEST_UID].active = 1;
+			//Buzzer_bip();
+			break;
+		case SERIAL_CMD_UID:
+			if(data_len==12){
+				for(i=0; i<12; i++){
+					_serial_parrams.other_uid[i] = *pdata;
+					pdata++;
+				}
+				_serial_parrams.other_uid_valid=1;
+			}
+			break;
+		default:
+			//while(1);
+			break;
+		}
+
+		_serial_parrams.nbr_of_cmd_in_buff--;
+		_serial_parrams.next_cmd_idx++;
+		if(_serial_parrams.next_cmd_idx == SERIAL_RX_NUM_OF_CMD)
+			_serial_parrams.next_cmd_idx = 0;
+
+
+	}else{
+		for(i=0; i < SERIAL_TOTAL_CMD; i++){
+			_serial_cmd_detect[i].active = 0;
+		}
+	}
+
+}
+
+
+void Serial_cmd_detect1(void)
+{
+	static uint8_t tmp_cmd;
+	int i;
+
+	if(Serial_cmd_decode(&_serial_cmd_results)){
+		tmp_cmd = _serial_cmd_results.cmd;
+
+		switch(tmp_cmd){
+		case SERIAL_CMD_LIGHT:
+			_serial_cmd_detect[SERIAL_CMD_LIGHT].active = 1;
+			Buzzer_bip();
+			break;
+		case SERIAL_CMD_PLUS:
+			_serial_cmd_detect[SERIAL_CMD_PLUS].active = 1;
+			Buzzer_bip();
+			break;
+		case SERIAL_CMD_MINUS:
+			_serial_cmd_detect[SERIAL_CMD_MINUS].active = 1;
+			Buzzer_bip();
+			break;
+		case SERIAL_CMD_TIMER:
+			_serial_cmd_detect[SERIAL_CMD_TIMER].active = 1;
+			Buzzer_bip();
+			break;
+		case SERIAL_CMD_AUTO:
+			_serial_cmd_detect[SERIAL_CMD_AUTO].active = 1;
+			Buzzer_bip();
+			break;
 		case SERIAL_CMD_UID:
 			_serial_cmd_detect[SERIAL_CMD_UID].active = 1;
 			Buzzer_bip();
 			break;
 		case SERIAL_CMD_REQUEST_UID:
 			_serial_cmd_detect[SERIAL_CMD_REQUEST_UID].active = 1;
-			//Buzzer_bip();
+			Buzzer_bip();
 			break;
 		default:
 			tmp_cmd = 0;
@@ -134,19 +207,26 @@ void Serial_cmd_detect(void)
 
 }
 
+bool Serial_check_cmd(enum Serial_Cmd_Enum_t cmd)
+{
+	return _serial_cmd_detect[cmd].active;
+
+}
+
+
 void Serial_tx_ISR(void)
 {
 
 }
 
-#define SERIAL_RX_FRAME_SOF	0x00
-#define SERIAL_RX_FRAME_EOF	0xFF
 
-#define SERIAL_RX_STATE_IDLE		0
-#define SERIAL_RX_STATE_RECEIVING 	1
+
+
+
+uint8_t serial_rx_state = SERIAL_RX_STATE_IDLE;
 void Serial_rx_ISR(void)
 {
-	static uint8_t serial_rx_state = SERIAL_RX_STATE_IDLE;
+
 	static uint8_t bytes_cnt=0;
 	static uint8_t nbr_data_bytes;
 	_serial_parrams.buff[_serial_parrams.receiving_cmd_idx][bytes_cnt] =
@@ -158,6 +238,7 @@ void Serial_rx_ISR(void)
 									== SERIAL_RX_FRAME_SOF){  //wait until sof
 			serial_rx_state = SERIAL_RX_STATE_RECEIVING;
 			bytes_cnt++;
+			Serial_time_out_begin();
 		}else{
 			bytes_cnt = 0;
 		}
@@ -204,11 +285,7 @@ void Serial_rx_ISR(void)
 	}
 }
 
-bool Serial_check_cmd(enum Serial_Cmd_Enum_t cmd)
-{
-	return _serial_cmd_detect[cmd].active;
 
-}
 
 void Serial_send_bytes(uint8_t *p_tx, uint8_t nbr_of_bytes)
 {
@@ -219,8 +296,8 @@ void Serial_send_bytes(uint8_t *p_tx, uint8_t nbr_of_bytes)
 
 	while(remaining_bytes!=0){
 		while(!USART_GetFlagStatus(USART1, USART_FLAG_TXE)){}
-		USART1->DR = *tmp;
-		//USART_SendData(USART1, *tmp);
+		//USART1->DR = *tmp;
+		USART_SendData(USART1, *tmp);
 		tmp++;
 		remaining_bytes--;
 	}
@@ -246,7 +323,7 @@ void Serial_send_cmd(enum Serial_Cmd_Enum_t cmd)
 {
 	uint8_t tx_tmp[4];
 	tx_tmp[0] = SERIAL_RX_FRAME_SOF;
-	tx_tmp[1] = cmd;
+	tx_tmp[1] = (uint8_t)cmd;
 	tx_tmp[2] = 0;
 	tx_tmp[3] = SERIAL_RX_FRAME_EOF;
 
@@ -262,13 +339,26 @@ bool Serial_check_other_uid_valid(void)
 uint8_t* Serial_get_other_uid(void)
 {
 	if(_serial_parrams.other_uid_valid){
-		
+
 		return _serial_parrams.other_uid;
 	}else{
 		return NULL;
 	}
 }
 
+
+void Serial_time_out_begin(void)
+{
+	_serial_time_out_cnt=0;
+}
+void Serial_time_out_tick(void)
+{
+	if(_serial_time_out_cnt>5)
+		serial_rx_state = SERIAL_RX_STATE_IDLE;
+	else
+		_serial_time_out_cnt++;
+
+}
 void Usart_to_default_config(void)
 {
 	USART_InitTypeDef USART_InitStructure;

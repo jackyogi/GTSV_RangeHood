@@ -116,7 +116,7 @@ extern uint32_t tmp_ir_cmd;
 #define INT_PRIORITY_SYSTICK		((1 << __NVIC_PRIO_BITS) -3)
 #define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -5)
 #define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -6)
-#define INT_PRIORITY_USART1		((1 << __NVIC_PRIO_BITS) -3) //-->make sure no lost
+#define INT_PRIORITY_USART1		((1 << __NVIC_PRIO_BITS) -2) //-->make sure no lost
 
 #define MAIN_TICK_MS			25
 #define TIME_ADJ_DELAY_DEFAULT	88

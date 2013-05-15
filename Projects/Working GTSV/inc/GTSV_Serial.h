@@ -16,9 +16,15 @@ enum Serial_Cmd_Enum_t {
 	SERIAL_CMD_UID=5,
 	SERIAL_CMD_REQUEST_UID=6,
 	SERIAL_CMD_ACK=7,
-	SERIAL_TOTAL_CMD=8
+	SERIAL_CMD_TMP_TIME,
+	SERIAL_TOTAL_CMD
 };
 
+#define SERIAL_RX_FRAME_SOF	0xAA
+#define SERIAL_RX_FRAME_EOF	0xCC
+
+#define SERIAL_RX_STATE_IDLE		0
+#define SERIAL_RX_STATE_RECEIVING 	1
 
 
 
@@ -50,7 +56,7 @@ struct Serial_Cmd_Result_t {
 
 extern struct Serial_Parrams_t _serial_parrams;
 extern struct Serial_Cmd_Result_t _serial_cmd_results;
-
+extern uint8_t serial_rx_state;
 /* Exported constants --------------------------------------------------------*/
 
 void Usart_to_default_config(void);
@@ -63,6 +69,7 @@ void Serial_cmd_detect(void);
 void Serial_send_my_uid(void);
 void Serial_send_cmd(enum Serial_Cmd_Enum_t cmd);
 uint8_t * Serial_get_other_uid(void);
+void Serial_time_out_tick(void);
 
 #endif
 

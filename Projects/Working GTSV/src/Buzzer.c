@@ -14,9 +14,9 @@ uint16_t	_gBuzzer_bip_lenght = 5;
 uint8_t		_gBuzzer_50msTick = 0;
 uint8_t		_gBuzzer_bip_cnt = 0;
 
-
 int Buzzer_bip(void)
 {
+
 	if(_gBuzzer_50msTick == 0){
 		_gBuzzer_50msTick = 1;
 		_gBuzzer_bip_cnt = 1;
@@ -24,9 +24,11 @@ int Buzzer_bip(void)
 	} else {
 		return -1;
 	}
+
 }
 int Buzzer_2bips(void)
 {
+
 	if(_gBuzzer_50msTick == 0){
 		_gBuzzer_50msTick = 1;
 		_gBuzzer_bip_cnt = 2;
@@ -34,9 +36,38 @@ int Buzzer_2bips(void)
 	} else {
 		return -1;
 	}
+
+}
+
+int Buzzer_bip1(void)
+{
+	if(gSystemFlags.working_mode == WORKING_OUTPUT_MASTER){
+		if(_gBuzzer_50msTick == 0){
+			_gBuzzer_50msTick = 1;
+			_gBuzzer_bip_cnt = 1;
+			return 0;
+		} else {
+			return -1;
+		}
+	}
+	return -1;
+}
+int Buzzer_2bips1(void)
+{
+	if(gSystemFlags.working_mode == WORKING_OUTPUT_MASTER){
+		if(_gBuzzer_50msTick == 0){
+			_gBuzzer_50msTick = 1;
+			_gBuzzer_bip_cnt = 2;
+			return 0;
+		} else {
+			return -1;
+		}
+	}
+	return -1;
 }
 int Buzzer_3bips(void)
 {
+	
 	if(_gBuzzer_50msTick == 0){
 		_gBuzzer_50msTick = 1;
 		_gBuzzer_bip_cnt = 3;

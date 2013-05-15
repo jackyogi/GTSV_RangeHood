@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=795333581
+Checksum=-1702405054
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -69,6 +69,7 @@ Fmt17=struct irr_decode_results_t-value_bit_len	4	0
 Fmt0=uint32_t[3]	4	0
 Fmt1=uint32_t[8]	1	0
 Fmt2=uint8_t[12]	4	0
+Fmt3=uint8_t[88]	4	0
 [watch_formats]
 Fmt0={W}42:*test_bit	1	0
 Fmt1={W}42:0x40000000 + 0x2400	4	0
@@ -81,8 +82,9 @@ Fmt7={W}42:hours	3	0
 Fmt8={W}42:mins	3	0
 Fmt9={W}42:num	3	0
 Fmt10={W}42:pos	3	0
-Fmt11={W}42:tmp_ir_cmd	4	0
-Fmt12={W}42:tmp_results	4	0
+Fmt11={W}42:serial_rx_state	4	0
+Fmt12={W}42:tmp_ir_cmd	4	0
+Fmt13={W}42:tmp_results	4	0
 [DataLog]
 LogEnabled=0
 SumEnabled=0
