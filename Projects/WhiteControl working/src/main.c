@@ -111,13 +111,13 @@ int main(void)
 			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 			i++;
 			if((i%2)==0){
-
+				Lcd_clear();
 			}else{
-
+				Lcd_set();
 			}
 		}
 
-		Spilcd_flush_buf_to_lcd();
+		///Spilcd_flush_buf_to_lcd();
 	}
 }
 
