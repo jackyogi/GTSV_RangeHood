@@ -67,15 +67,15 @@ void RTC_Config(void)
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
-	NVIC_SetPriority(RTC_WKUP_IRQn, (1 << __NVIC_PRIO_BITS) -1);
-	/* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
-
+	NVIC_SetPriority(RTC_WKUP_IRQn, INT_PRIORITY_WKUP);
+		//RTCCLK=32768Hz ; div=16  =>2048Hz
+	RTC_WakeUpClockConfig(RTC_WakeUpClock_RTCCLK_Div16);
+		
+  	//div 256 =>8Hz  ~ 125ms
+	RTC_SetWakeUpCounter(0xFF);	
 	
-	RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
-	RTC_SetWakeUpCounter(0x00);
-
 	RTC_ClearITPendingBit(RTC_IT_WUT);
-	EXTI_ClearITPendingBit(EXTI_Line20);
+	  EXTI_ClearITPendingBit(EXTI_Line20);
 	/* Enable the RTC Wakeup Interrupt */
 	RTC_ITConfig(RTC_IT_WUT, ENABLE);
 

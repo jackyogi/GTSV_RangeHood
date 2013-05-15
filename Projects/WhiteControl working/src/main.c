@@ -32,12 +32,17 @@
 static volatile uint32_t TimingDelay;
 
 struct SystemConfig _gSystemConfig;
-struct SystemFlags  gSystemFlags;
+struct SystemFlags  gSystemFlags = {
+	.sys_state = SYS_STATE_INITIAL,
+	.ctime_hrs = 0,
+	.ctime_mins =0,
+	.fan_spd_default = 1,
+};
 uint32_t _LCD_RAM[8];
 
 uint16_t msTicks;
 
-uint16_t tmp_ms1, tmp_ms2, diff_ms; 
+uint16_t tmp_ms1, tmp_ms2, diff_ms;
 
 uint8_t hours=0, mins=0;
 
@@ -90,42 +95,231 @@ int main(void)
 	Ports_to_default_config();
   	//Lcd_to_default_config();
 	Buzzer_timer_to_default_state();
-	//Tsense_to_default_config();
+	Tsense_to_default_config();
 	//Timers_to_default_config();
 	Spilcd_to_default_config();
 
 
 
-	Lcd_set();
+	//Lcd_set();
+	gSystemFlags.sys_state = SYS_STATE_OFF;
 	while (1)
 	{
+		// Run TSL RC state machine
+		TSL_Action();
 
+		main_tick();
 		if(gSystemFlags.ms100_flag){
 			gSystemFlags.ms100_flag = 0;
-
+			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 		}
 
 
 		if(gSystemFlags.ms500_flag){
-			gSystemFlags.ms500_flag=0;
-			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-			i++;
-			if((i%2)==0){
-				Lcd_clear();
-			}else{
-				Lcd_set();
-			}
+			gSystemFlags.ms500_flag = 0;
+
+
+
 		}
 
-		///Spilcd_flush_buf_to_lcd();
+		Spilcd_flush_buf_to_lcd();
+
 	}
+}
+
+uint8_t test=0;
+void main_tick(void)
+{
+
+	Tsense_key_detect();
+
+	main_big_switch();
+/*
+	Lcd_icon_fan(Lcd_get_fan_cursor_slow());
+	if(Lcd_get_blink_cursor())
+		Lcd_icon_on(LCD_ICON_COLON1);
+	else
+		Lcd_icon_off(LCD_ICON_COLON1);
+*/
+//for any SYS State
+	if(Tsense_check_key_up(TSENSE_KEY_LIGHT)){
+		gSystemFlags.light_state ^= 1;
+	}
+
+	if(gSystemFlags.light_state){
+		Lcd_icon_on(LCD_ICON_LIGHT);
+		MAIN_LAMP_ON;
+	}else{
+		Lcd_icon_off(LCD_ICON_LIGHT);
+		MAIN_LAMP_OFF;
+	}
+
+	if((gSystemFlags.sys_state == SYS_STATE_OFF) &&
+		(gSystemFlags.light_state == 0)){
+		LED_ALL_OFF;
+	}else{
+		LED_ALL_ON;
+	}
+
+
+
 }
 
 
 
+void main_big_switch(void)
+{
+	static uint8_t blinking_disable=0;
+
+	switch(gSystemFlags.sys_state){
+	case SYS_STATE_INITIAL:
+		gSystemFlags.sys_state = SYS_STATE_OFF;
+		break;
+	case SYS_STATE_OFF:
+		//*****update LCD & LED
+		Lcd_fill_pos_with_num(0, 11);
+		Lcd_fill_pos_with_num(1, 11);
+		Lcd_fill_pos_with_num(2, 11);
+		Lcd_fill_pos_with_num(3, 11);
+		Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, 11); //off
+		Lcd_icon_fan(3);  //fan icons off
+		Lcd_icon_off(LCD_ICON_COLON1);
+		Lcd_icon_off(LCD_ICON_CLOCK);
+		Lcd_fill_hour2(RTC_TimeStructure.RTC_Hours);
+		Lcd_fill_min2(RTC_TimeStructure.RTC_Minutes);
+		//blink colon2 icon
+		if(Lcd_get_blink_cursor()){
+			Lcd_icon_on(LCD_ICON_COLON2);
+		}else{
+			Lcd_icon_off(LCD_ICON_COLON2);
+		}
+
+		
+
+		//*****check keys
+		//key power  --> begin blowing with def spd & counting time
+		if(Tsense_check_key(TSENSE_KEY_POWER)){
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+			Ctime_begin_counting();
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+		}
+		//hold key minus --> change to Dtime_adj
+		if(Tsense_check_key_holding(TSENSE_KEY_MINUS)){
+			gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
+		}
+		//hold key Pluss --> clear ctime & change to blowing
+		if(Tsense_check_key_holding(TSENSE_KEY_PLUS)){
+			Ctime_to_zero();
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+			Ctime_begin_counting();
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+		}
+
+		break;
+	case SYS_STATE_BLOWING:
+		//*****update LCD & LED
+		Lcd_icon_off(LCD_ICON_CLOCK);
+		
+		//blink colon1 icon
+		if(Lcd_get_blink_cursor()){
+			Lcd_icon_on(LCD_ICON_COLON1);
+			Lcd_icon_on(LCD_ICON_COLON2);
+		}else{
+			Lcd_icon_off(LCD_ICON_COLON1);
+			Lcd_icon_off(LCD_ICON_COLON2);
+		}
+		//fill ctime
+		Lcd_fill_hour1(gSystemFlags.ctime_hrs);
+		Lcd_fill_min1(gSystemFlags.ctime_mins);
+		//fill zero
+		Lcd_fill_hour2(RTC_TimeStructure.RTC_Hours);
+		Lcd_fill_min2(RTC_TimeStructure.RTC_Minutes);
+		//fan rotate
+		if(gSystemFlags.fan_spd>2)
+			Lcd_icon_fan(Lcd_get_fan_cursor_fast());
+		else
+			Lcd_icon_fan(Lcd_get_fan_cursor_slow());
+		//fill fan spd
+		Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, gSystemFlags.fan_spd);
+
+		////*****check keys
+		//key plus
+		if(Tsense_check_key(TSENSE_KEY_PLUS)){
+			if(gSystemFlags.fan_spd_default<4)
+				gSystemFlags.fan_spd_default++;
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+		}
+		//key minus
+		if(Tsense_check_key(TSENSE_KEY_MINUS)){
+			if(gSystemFlags.fan_spd_default>1)
+				gSystemFlags.fan_spd_default--;
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+		}
+		//PW key & not holding  -> change to off
+		if(Tsense_check_key_up(TSENSE_KEY_POWER)
+			&&(!Tsense_check_key_holding(TSENSE_KEY_POWER))){
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+			Blower_set_speed(0);
+		}
+		//hold PW key  --> to APO BLOWING with default APO Dtime
+		if(Tsense_check_key_holding(TSENSE_KEY_POWER)){
+
+		}
+		break;
+	case SYS_STATE_APO_BLOWING:
+		break;
+	case SYS_STATE_APO_DTIME_ADJ:
+		break;
+	default:
+		break;
+
+	};
+
+}
+
+void Blower_set_speed(uint8_t spd)
+{
 
 
-
+	switch(spd){
+	case 1:
+		gSystemFlags.fan_spd = 1;
+		BLOWER_FAN1 = 1;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 2:
+		gSystemFlags.fan_spd = 2;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 1;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		break;
+	case 3:
+		gSystemFlags.fan_spd = 3;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 1;
+		BLOWER_FAN4 = 0;
+		break;
+	case 4:
+		gSystemFlags.fan_spd = 4;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 1;
+		break;
+	default:
+		gSystemFlags.fan_spd = 0;
+		BLOWER_FAN1 = 0;
+		BLOWER_FAN2 = 0;
+		BLOWER_FAN3 = 0;
+		BLOWER_FAN4 = 0;
+		Lcd_icon_fan(5);
+		break;
+	}
+}
 
 /**
   * @brief  To initialize the I/O ports
@@ -146,7 +340,7 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_ResetBits(GPIOA,GPIO_Pin_12);
+	//GPIO_ResetBits(GPIOA,GPIO_Pin_12);
 
 //config GPIO for UI LEDs
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
@@ -157,26 +351,27 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	//GPIO_SetBits(GPIOA, GPIO_Pin_11);
-	GPIO_ResetBits(GPIOA, GPIO_Pin_11);
+	//GPIO_ResetBits(GPIOA, GPIO_Pin_11);
 
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
-	//GPIO_SetBits(GPIOC, GPIO_Pin_13);
-	GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+	GPIO_SetBits(GPIOC, GPIO_Pin_12);
+	//GPIO_ResetBits(GPIOC, GPIO_Pin_12);
 
 //config GPIO for FAN: open drain w/ pull up
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 //config GPIO for LMP  : open drain w/ pull up
@@ -233,6 +428,38 @@ void Timers_to_default_config(void)
 	//clock to TIME7
 	//Buzzer_timer_to_default_state();
 
+}
+
+void Ctime_begin_counting(void)
+{
+	gSystemFlags.ctime_counting = 1;
+
+}
+void Ctime_stop_counting(void)
+{
+	gSystemFlags.ctime_counting = 0;
+}
+void Ctime_to_zero(void)
+{
+	gSystemFlags.ctime_mins = 0;
+	gSystemFlags.ctime_hrs = 0;
+}
+void Ctime_tick_min(void)
+{
+	if(gSystemFlags.ctime_counting){
+		gSystemFlags.ctime_mins++;
+		if(gSystemFlags.ctime_mins==60){
+			gSystemFlags.ctime_hrs++;
+		}
+	}
+}
+bool Ctime_check_overtime(void)
+{
+	if(gSystemFlags.ctime_hrs>=30){
+		return TRUE;
+	}else {
+		return FALSE;
+	}
 }
 
 

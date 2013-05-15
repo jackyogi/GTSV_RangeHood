@@ -70,7 +70,7 @@ void RTC_Config(void)
 	NVIC_SetPriority(RTC_WKUP_IRQn, (1 << __NVIC_PRIO_BITS) -1);
   /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
   
-  RTC_SetWakeUpCounter(0x01);
+  RTC_SetWakeUpCounter(0x00);
 	RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
 	
 	

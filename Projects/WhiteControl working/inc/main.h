@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Project/STM32L1xx_StdPeriph_Template/main.h 
+  * @file    Project/STM32L1xx_StdPeriph_Template/main.h
   * @author  MCD Application Team
   * @version V1.0.0
   * @date    13-September-2011
@@ -17,8 +17,8 @@
   *
   * <h2><center>&copy; COPYRIGHT 2010 STMicroelectronics</center></h2>
   ******************************************************************************
-  */ 
-  
+  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
 #define __MAIN_H
@@ -29,9 +29,13 @@
 #include "GTSV_SpiLcd_TM172x.h"
 #include "buzzer.h"
 #include "GTSV_TSense.h"
+#include <stdint.h>
 #include <stdio.h>
 
 /* Exported types ------------------------------------------------------------*/
+#define bool _Bool
+#define FALSE 0
+#define TRUE !FALSE
 struct SystemConfig {
 	uint8_t sys_clk_src; //0x00: MSI | 0x04:HSI | 0x08:HSE | 0x0C: PLL --> used as sysclk source
 	RCC_ClocksTypeDef RCC_Clk;
@@ -41,7 +45,7 @@ struct SystemConfig {
 	unsigned RCC_FLAG_PLLRDY1:1;
 	unsigned RCC_FLAG_LSERDY1:1;
 	unsigned RCC_FLAG_LSIRDY1:1; //LSI oscillator clock ready
-    unsigned RCC_FLAG_OBLRST1:1;  // Option Byte Loader (OBL) reset 
+    unsigned RCC_FLAG_OBLRST1:1;  // Option Byte Loader (OBL) reset
 	unsigned RCC_FLAG_PINRST1:1;// Pin reset
 	unsigned RCC_FLAG_PORRST1:1;// POR/PDR reset
 	unsigned RCC_FLAG_SFTRST1:1;// Software reset
@@ -53,13 +57,13 @@ struct SystemConfig {
 
 
 //can toggle light on/off in every state by light button.
-enum System_state_enum_t {
+enum System_State_Enum_t {
 	SYS_STATE_INITIAL,
-	SYS_STATE_OFF, //can change state to: blowing (PW), DTime_Adj(minus), clear C R time 
+	SYS_STATE_OFF, //can change state to: blowing (PW), DTime_Adj(minus), clear C R time
 	SYS_STATE_BLOWING,  //change system default blowing speed. Change to APO state(hold PW) change to off state(PW)
 	SYS_STATE_APO_BLOWING,//change Sys_def_blowing_spd. change to off state
 	SYS_STATE_APO_DTIME_ADJ  //change sys_def_APO_DTIME. change to offstate(3s or pw)
-	
+
 };
 
 struct SystemFlags {
@@ -70,21 +74,34 @@ struct SystemFlags {
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
 	unsigned fanRotate:2;
+	unsigned ms125_flag:1;
+	unsigned blower_apo_time_out:1;
 
 	unsigned light_state:1;
 	unsigned led_backlight:1;
 	unsigned time_adj_stage:1;
+
+	unsigned ctime_counting:1;
+
 	uint8_t  time_adj_delay;
 	uint8_t  tmp_hour;
 	uint8_t  tmp_min;
-	uint8_t  blower_apo_mins_tmp;
-	uint8_t  blower_apo_mins;
-	uint8_t  blower_fan_speed;
-	enum System_state_enum_t sys_state;
-	RTC_TimeTypeDef blower_apo_begin;
-	RTC_TimeTypeDef blower_apo_end;
-	
-	
+	//uint8_t  blower_apo_mins_tmp;
+
+
+
+
+	enum System_State_Enum_t sys_state;
+	uint16_t blower_apo_remaining_sec;
+
+	uint8_t blower_apo_mins;
+	uint8_t fan_spd_default;
+	uint8_t fan_spd;
+
+	uint8_t ctime_hrs;
+	uint8_t ctime_mins;
+
+
 };
 
 
@@ -94,6 +111,14 @@ extern struct SystemFlags gSystemFlags;
 
 /* Exported constants --------------------------------------------------------*/
 #define DEBUG
+#define INT_PRIORITY_WKUP		((1 << __NVIC_PRIO_BITS) -2)
+#define INT_PRIORITY_SYSTICK		((1 << __NVIC_PRIO_BITS) -3)
+#define INT_PRIORITY_TIM7		((1 << __NVIC_PRIO_BITS) -5)
+#define INT_PRIORITY_TIM6		((1 << __NVIC_PRIO_BITS) -6)
+#define INT_PRIORITY_USART1		((1 << __NVIC_PRIO_BITS) -2) //-->make sure no lost
+
+#define TIME_ADJ_DELAY_DEFAULT	88
+
 
 /* Exported macro ------------------------------------------------------------*/
 
@@ -114,34 +139,29 @@ extern struct SystemFlags gSystemFlags;
 #ifndef ODR_REG_OFFSET
 #define ODR_REG_OFFSET		0x14
 #endif
-#ifndef BSRRL_REG_OFFSET	
+#ifndef BSRRL_REG_OFFSET
 #define BSRRL_REG_OFFSET		0x18
 #endif
-#ifndef BSRRH_REG_OFFSET	
+#ifndef BSRRH_REG_OFFSET
 #define BSRRH_REG_OFFSET		0x1A
 #endif
 
-#define LED_ALL	BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 11)
-#define LED_ALL_ON	BITBAND_POINTER_AT(GPIOA_BASE + BSRRL_REG_OFFSET, 11) = 1
-#define LED_ALL_OFF BITBAND_POINTER_AT(GPIOA_BASE + BSRRH_REG_OFFSET, 11) = 1
+#define LED1		BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 11)
+#define LED1_ON	BITBAND_POINTER_AT(GPIOA_BASE + BSRRL_REG_OFFSET, 11) = 1
+#define LED1_OFF 	BITBAND_POINTER_AT(GPIOA_BASE + BSRRH_REG_OFFSET, 11) = 1
+#define LED2		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 12)
 
-#define LED_LIGHT_BT	BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 13)
-#define LED_LIGHT_BT_ON	BITBAND_POINTER_AT(GPIOB_BASE + BSRRL_REG_OFFSET, 13)=1
-#define LED_LIGHT_BT_OFF BITBAND_POINTER_AT(GPIOB_BASE + BSRRH_REG_OFFSET, 13)=1
+#define LED_ALL_ON		LED1 = 1; LED2 =1
+#define LED_ALL_OFF		LED1 = 0; LED2 =0
 
-#define LED_TIMER_BT	BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 14)
-#define LED_PLUS_BT		BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 2)
-#define LED_MINUS_BT	BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 4)
-#define LED_AUTO_BT		BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 1)
+#define MAIN_LAMP		BITBAND_POINTER_AT(GPIOA_BASE + ODR_REG_OFFSET, 1)
+#define MAIN_LAMP_ON	BITBAND_POINTER_AT(GPIOA_BASE + BSRRL_REG_OFFSET, 1) = 1
+#define MAIN_LAMP_OFF	BITBAND_POINTER_AT(GPIOA_BASE + BSRRH_REG_OFFSET, 1) = 1
 
-#define MAIN_LAMP		BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 7)
-#define MAIN_LAMP_ON	BITBAND_POINTER_AT(GPIOB_BASE + BSRRL_REG_OFFSET, 7) = 1
-#define MAIN_LAMP_OFF	BITBAND_POINTER_AT(GPIOB_BASE + BSRRH_REG_OFFSET, 7) = 1
-
-#define BLOWER_FAN1		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 2)
-#define BLOWER_FAN2		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 3)
-#define BLOWER_FAN3		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 1)
-#define BLOWER_FAN4		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 0)
+#define BLOWER_FAN1		BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 8)
+#define BLOWER_FAN2		BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 5)
+#define BLOWER_FAN3		BITBAND_POINTER_AT(GPIOB_BASE + ODR_REG_OFFSET, 3)
+#define BLOWER_FAN4		BITBAND_POINTER_AT(GPIOC_BASE + ODR_REG_OFFSET, 10)
 
 
 
@@ -158,8 +178,16 @@ void Cpu_to_default_config(void);
 void Get_system_clk_config(void);
 void Ports_to_default_config(void);
 void Timers_to_default_config(void);
+void main_tick(void);
+void main_big_switch(void);
 
+void Blower_set_speed(uint8_t spd);
 
+void Ctime_begin_counting(void);
+void Ctime_stop_counting(void);
+void Ctime_to_zero(void);
+void Ctime_tick_min(void);
+bool Ctime_check_overtime(void);
 
 #endif /* __MAIN_H */
 

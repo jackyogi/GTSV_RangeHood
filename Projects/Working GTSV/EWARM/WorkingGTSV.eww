@@ -5,6 +5,9 @@
     <path>$WS_DIR$\GTSV-BlackControl.ewp</path>
   </project>
   <project>
+    <path>$WS_DIR$\..\..\..\..\GTSV_RangeHood-BlackControl-Final2\Projects\Working GTSV\EWARM\GTSV-BlackControl.ewp</path>
+  </project>
+  <project>
     <path>$WS_DIR$\..\..\WhiteControl working\EWARM\WhiteControl.ewp</path>
   </project>
   <batchBuild/>

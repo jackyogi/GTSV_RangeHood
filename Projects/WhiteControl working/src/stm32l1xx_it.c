@@ -205,18 +205,37 @@ void EXTI0_IRQHandler(void)
   //enableInterrupts();
 }
 
-
+//125ms tick
 void RTC_WKUP_IRQHandler (void)
 {
+	static uint8_t ms125Tick = 0;
+	static uint16_t sec1Tick = 0;
 
+	gSystemFlags.ms125_flag=1;
 
-	//LED_ALL ^=1;
-	//Buzzer_bip();
+	
+	ms125Tick++;
+	if(ms125Tick == 8){ //1s tick here!
+		ms125Tick=0;
+		sec1Tick++;
+		//check time out in Blowing Auto Power Off
+		if(gSystemFlags.sys_state == SYS_STATE_APO_BLOWING){
+			if(gSystemFlags.blower_apo_remaining_sec == 0){
+				gSystemFlags.blower_apo_time_out =1;
+			}else{
+				gSystemFlags.blower_apo_remaining_sec--;
+			}
+		}
+	}
+
+	Tsense_key_hold_detect_tick125ms();
+	Lcd_blink_tick125ms();  //tick 125 for LCD blink cursor
+
 	PWR_RTCAccessCmd(ENABLE);
 	RTC_ClearITPendingBit(RTC_IT_WUT);
+	EXTI_ClearITPendingBit(EXTI_Line20);
 	PWR_RTCAccessCmd(DISABLE);
 
-	EXTI_ClearITPendingBit(EXTI_Line20);
 
 }
 

@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "stm32_tsl_api.h"
+#define bool _Bool
 
 #define TS_KEY01	sSCKeyInfo[0]
 #define TS_KEY02	sSCKeyInfo[1]
@@ -24,26 +25,29 @@
 
 
 enum Tsense_key_enum_t {
-	TSENSE_KEY_MINUS=0,
-	TSENSE_KEY_AUTO=1,
-	TSENSE_KEY_TIMER=2,
-	TSENSE_KEY_PLUS=3,
-	TSENSE_KEY_LIGHT=4
+	TSENSE_KEY_PLUS=0,
+	TSENSE_KEY_LIGHT=1,
+	TSENSE_KEY_POWER=2,
+	TSENSE_KEY_MINUS=3,
+	TSENSE_KEY_ANY
 };
+
 
 //call this to initialize Touch Sense
 void Tsense_to_default_config(void);
 
-//call this in a loop to process touch sense actions
-void Tsense_action(void);
+void Tsense_key_detect(void);
+//void Tsense_key_hold_detect_tick50ms(void); //<-- must be called in 50ms tick
+void Tsense_key_hold_detect_tick125ms(void); //<-- must be called in 125ms tick
 
-void Tsense_key_detect_first(void);
 
-uint8_t Tsense_check_rising_edge(enum Tsense_key_enum_t key);
-uint8_t Tsense_check_high_level(enum Tsense_key_enum_t key);
-uint8_t Tsense_check_key_hold(enum Tsense_key_enum_t key);
 
-void Tsense_key_detect_last(void);
+bool Tsense_check_key(enum Tsense_key_enum_t key);
+bool Tsense_check_key_up(enum Tsense_key_enum_t key);
+bool Tsense_check_key_down(enum Tsense_key_enum_t key);
+bool Tsense_check_key_touching(enum Tsense_key_enum_t key);
+bool Tsense_check_key_holding(enum Tsense_key_enum_t key);
+
 
 
 
