@@ -37,6 +37,8 @@ uint32_t _LCD_RAM[8];
 
 uint16_t msTicks;
 
+uint16_t tmp_ms1, tmp_ms2, diff_ms; 
+
 uint8_t hours=0, mins=0;
 
 
@@ -84,56 +86,17 @@ int main(void)
 #endif
 
 	Cpu_to_default_config();
-	//RTC_to_default_config();
+	RTC_to_default_config();
 	Ports_to_default_config();
-	STB_SET_BIT
   	//Lcd_to_default_config();
 	Buzzer_timer_to_default_state();
 	//Tsense_to_default_config();
 	//Timers_to_default_config();
-	Spi_to_default_config();
+	Spilcd_to_default_config();
 
 
 
-	STB_SET_BIT	
-	while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY)){}
-	STB_RESET_BIT
-	SPI1->DR = spi_init[0];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	STB_SET_BIT
-
-
-	STB_RESET_BIT
-	SPI1->DR = spi_init[1];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	STB_SET_BIT
-
-
-	STB_RESET_BIT
-	SPI1->DR = spi_init[2];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	SPI1->DR = spi_init[3];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	SPI1->DR = spi_init[4];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	SPI1->DR = spi_init[5];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	SPI1->DR = spi_init[6];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	
-	for(i=0; i<0x0F ; i++){
-		SPI1->DR = 0xFF;
-		while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	}
-
-	STB_SET_BIT
-
-	STB_RESET_BIT
-	SPI1->DR = spi_init[7];
-	while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
-	STB_SET_BIT
-
-
+	Lcd_set();
 	while (1)
 	{
 
@@ -142,42 +105,25 @@ int main(void)
 
 		}
 
-		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 
-		SPI1->DR = tmp_spi;
-		while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
 		if(gSystemFlags.ms500_flag){
 			gSystemFlags.ms500_flag=0;
 			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+			i++;
+			if((i%2)==0){
 
-			SPI1->DR = tmp_spi;
-			while(!SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE)){}
+			}else{
 
+			}
 		}
 
-
+		Spilcd_flush_buf_to_lcd();
 	}
 }
 
 
 
-void Spi_to_default_config(void)
-{
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-	SPI_I2S_DeInit(SPI1);
-	SPI_InitStructure.SPI_Direction = SPI_Direction_1Line_Tx;
-	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-	SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;
-	SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
-	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128;
-	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_LSB;
-	SPI_InitStructure.SPI_CRCPolynomial = 7;
-	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-  	SPI_Init(SPI1, &SPI_InitStructure);
-	//SPI_SSOutputCmd(SPI1, ENABLE);
-	SPI_Cmd(SPI1, ENABLE);
-}
+
 
 
 
@@ -242,34 +188,7 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-//config GPIO for SPI1
-	//for STB pins
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-
-
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_DOWN;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-	GPIO_Init( GPIOA, &GPIO_InitStructure);
-
-  	//GPIO_PinAFConfig(GPIOB, GPIO_PinSource12,GPIO_AF_SPI1);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource5,GPIO_AF_SPI1);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7,GPIO_AF_SPI1);
+	Spilcd_configure_GPIO();
 
 }
 

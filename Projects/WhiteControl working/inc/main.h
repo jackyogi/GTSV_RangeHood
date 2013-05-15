@@ -26,7 +26,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l1xx.h"
 #include "GTSV_RTC.h"
-#include "GTSV_LCD.h"
+#include "GTSV_SpiLcd_TM172x.h"
 #include "buzzer.h"
 #include "GTSV_TSense.h"
 #include <stdio.h>

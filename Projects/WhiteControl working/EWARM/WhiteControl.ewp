@@ -1008,16 +1008,16 @@
       <name>$PROJ_DIR$\..\inc\Buzzer.h</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\src\GTSV_lcd.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\inc\GTSV_LCD.h</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\src\GTSV_RTC.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\inc\GTSV_RTC.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\GTSV_SpiLcd_TM172x.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\GTSV_SpiLcd_TM172x.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\GTSV_TSense.c</name>
@@ -1027,6 +1027,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\main.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\inc\main.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\inc\stm32_tsl_conf.h</name>

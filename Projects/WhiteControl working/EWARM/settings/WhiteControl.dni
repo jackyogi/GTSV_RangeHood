@@ -1,5 +1,5 @@
 [DebugChecksum]
-Checksum=-1283972830
+Checksum=252728225
 [Stack]
 FillEnabled=0
 OverflowWarningsEnabled=1
@@ -53,8 +53,9 @@ Fmt2=RTC_TimeTypeDef-RTC_Minutes	3	0
 Fmt3=RTC_TimeTypeDef-RTC_Seconds	3	0
 [array_types]
 Fmt0=uint32_t[16]	4	0
-Fmt1=uint8_t[2]	3	0
-Fmt2=uint8_t[8]	4	0
+Fmt1=uint8_t[16]	4	0
+Fmt2=uint8_t[2]	3	0
+Fmt3=uint8_t[8]	4	0
 [watch_formats]
 Fmt0={W}42:tmp_spi	4	0
 [DataLog]
@@ -70,10 +71,6 @@ GraphEnabled=0
 ShowTimeLog=1
 ShowTimeSum=1
 SumSortOrder=0
-[Disassemble mode]
-mode=0
-[Breakpoints2]
-Count=0
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -81,9 +78,6 @@ Category=_ 0
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
-[Aliases]
-Count=0
-SuppressDialog=0
 [Trace2]
 Enabled=0
 ShowSource=0
@@ -104,3 +98,10 @@ Mode=3
 Graph=0
 Symbiont=0
 Exclusions=
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Count=0
+[Aliases]
+Count=0
+SuppressDialog=0
