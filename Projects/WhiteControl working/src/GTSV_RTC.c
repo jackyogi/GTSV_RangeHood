@@ -108,12 +108,12 @@ void RTC_to_default_config(void)
 
 
 	RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
-	RTC_TimeStructure.RTC_Hours = 2;
-	RTC_TimeStructure.RTC_Minutes = 25;
+	RTC_TimeStructure.RTC_Hours = 12;
+	RTC_TimeStructure.RTC_Minutes = 00;
 	RTC_TimeStructure.RTC_Seconds = 00;
 	
 	
-	//RTC_SetTime(RTC_Format_BIN, &RTC_TimeStructure);
+	RTC_SetTime(RTC_Format_BIN, &RTC_TimeStructure);
 	//RTC_SetDate(RTC_Format_BIN,&RTC_DateStructure);
 
 	//disable access to RTC & disable clk to PWR

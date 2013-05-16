@@ -11,7 +11,7 @@
 #define SPILCD_STB_BIT_SET	BITBAND_POINTER_AT(GPIOA_BASE + BSRRL_REG_OFFSET, 4)=1
 #define SPILCD_STB_BIT_RESET 	BITBAND_POINTER_AT(GPIOA_BASE + BSRRH_REG_OFFSET, 4)=1
 
-
+#define LCD_CHAR_CLEAR		11
 
 //this is the offset of the com channel address in memory relative to the LCD_RAM_BASE (or COM0 Offset)
 //the table is the offset of MCU com channel that drive the LCD pins: COM0, COM1, COM2, COM3
@@ -29,7 +29,7 @@ static const uint8_t _lcd_segment[18] =
 //Ex: number 0 will have: g=0, f=1, e=1, d=1, c=1, b=1, a=1 => the binary: 0111111 or hex:0x3F
 //0,1, 2, 3, 4, 5, 6, 7, 8, 9, F, blank
 const uint8_t _number_to_7segments[12] =
-					{0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x71, 0x00};
+					{0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x00, 0x00};
 
 const uint8_t _num_to_7seg0[12] = 
 					{0xAF, 0x06, 0x6D, 0x4F, 0xC6, 0xCB, 0xEB, 0x0E, 0xEF, 0xCF, 0x00, 0x00};
@@ -71,7 +71,7 @@ void Lcd_fill_pos_with_num(uint8_t pos, uint8_t num)
 	if(num<10)
 		tmp = num;
 	else 
-		tmp = 10; //10 is clear
+		tmp = 11; //10 is clear
 	switch(pos){
 	case 0:
 	case 1:
@@ -105,7 +105,9 @@ void Lcd_fill_hour1(uint8_t num)
 
 void Lcd_fill_hour2(uint8_t num)
 {
-	Lcd_fill_2pos_with_num(4, num);
+	//Lcd_fill_2pos_with_num(4, num);
+	Lcd_fill_pos_with_num(4, num/10);
+	Lcd_fill_pos_with_num(5, num%10);
 }
 
 void Lcd_fill_min1(uint8_t num)
@@ -118,6 +120,21 @@ void Lcd_fill_min2(uint8_t num)
 	Lcd_fill_2pos_with_num(6, num);
 }
 
+void Lcd_clear_hour1_min1(void)
+{
+	Lcd_fill_pos_with_num(0, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(1, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(2, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(3, LCD_CHAR_CLEAR);
+}
+
+void Lcd_clear_hour2_min2(void)
+{
+	Lcd_fill_pos_with_num(4, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(5, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(6, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(7, LCD_CHAR_CLEAR);
+}
 
 void Spilcd_flush_buf_to_lcd(void)
 {

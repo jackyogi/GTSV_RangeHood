@@ -2,7 +2,7 @@
 #include "GTSV_TSense.h"
 #include "main.h"
 #define TSENSE_NUM_OF_KEYS	NUMBER_OF_SINGLE_CHANNEL_KEYS
-#define TSENSE_DELAY_HOLD_DETECT	8
+#define TSENSE_DELAY_HOLD_DETECT	5
 
 
 //keylevel =1 --> key falling  --> key level = 0  --> key rising --> keylevel =1
@@ -27,12 +27,14 @@ void Tsense_key_detect(void)
 	int i;
 
 	tsense_keys[TSENSE_KEY_ANY].rising_edge = 0;
+	tsense_keys[TSENSE_KEY_ANY].high_level = 0;
+	tsense_keys[TSENSE_KEY_ANY].falling_edge =0;
 	for(i=0; i<TSENSE_NUM_OF_KEYS; i++){ //key detected
 		//after risng edge -> high_level =1
 		if(tsense_keys[i].rising_edge){
 			tsense_keys[i].rising_edge = 0;
 			tsense_keys[i].high_level = 1;
-			Buzzer_bip();
+			//Buzzer_bip();
 		}
 		//after falling edge -> high_level =0
 		if(tsense_keys[i].falling_edge){
@@ -52,7 +54,8 @@ void Tsense_key_detect(void)
 
 		}
 	tsense_keys[TSENSE_KEY_ANY].rising_edge |= tsense_keys[i].rising_edge;
-
+	tsense_keys[TSENSE_KEY_ANY].high_level |= tsense_keys[i].high_level;
+	tsense_keys[TSENSE_KEY_ANY].falling_edge |= tsense_keys[i].falling_edge;
 	}
 
 
@@ -63,7 +66,7 @@ void Tsense_key_detect(void)
 void Tsense_key_hold_detect_tick125ms(void)
 {
 	int i;
-
+	tsense_keys[TSENSE_KEY_ANY].key_hold =0;
 	for(i=0; i<TSENSE_NUM_OF_KEYS; i++){
 		//detect key hold
 		if(tsense_keys[i].high_level){
@@ -76,6 +79,7 @@ void Tsense_key_hold_detect_tick125ms(void)
 			tsense_keys[i].delay_hold_detect = 0;
 			tsense_keys[i].key_hold = 0;
 		}
+	tsense_keys[TSENSE_KEY_ANY].key_hold |= tsense_keys[i].key_hold;
 	}
 }
 
@@ -83,7 +87,7 @@ void Tsense_key_hold_detect_tick125ms(void)
 
 bool Tsense_check_key(enum Tsense_key_enum_t key)
 {
-	return tsense_keys[key].falling_edge;
+	return tsense_keys[key].rising_edge;
 }
 
 bool Tsense_check_key_down(enum Tsense_key_enum_t key)
@@ -128,6 +132,12 @@ void Tsense_to_default_config(void)
 		sSCKeyInfo[i].DxSGroup = 0x01;
 	}
 	#endif
+
+
+	sSCKeyInfo[1].DetectThreshold = 89;
+	sSCKeyInfo[1].EndDetectThreshold = 89;
+	sSCKeyInfo[1].RecalibrationThreshold = -22;
+	
 	// Change thresholds of specific keys
 	/*
 	sSCKeyInfo[0].DetectThreshold = 99;

@@ -60,12 +60,22 @@ struct SystemConfig {
 enum System_State_Enum_t {
 	SYS_STATE_INITIAL,
 	SYS_STATE_OFF, //can change state to: blowing (PW), DTime_Adj(minus), clear C R time
+	SYS_STATE_ON,  //initial state show realtime clock  with backlight. --> change to off(1. after 1 min idle | PW button
+				//plus--> blowing spd1; minus --> blowing spd4
 	SYS_STATE_BLOWING,  //change system default blowing speed. Change to APO state(hold PW) change to off state(PW)
 	SYS_STATE_APO_BLOWING,//change Sys_def_blowing_spd. change to off state
 	SYS_STATE_APO_DTIME_ADJ  //change sys_def_APO_DTIME. change to offstate(3s or pw)
 
 };
 
+/*
+SYS_STATE_INITIAL,
+	SYS_STATE_OFF, //can change state to: blowing (PW), DTime_Adj(minus), clear C R time
+	SYS_STATE_ON,  //initial state show realtime clock -->auto off
+	SYS_STATE_BLOWING,  //change system default blowing speed. Change to APO state(hold PW) change to off state(PW)
+	SYS_STATE_APO_BLOWING,//change Sys_def_blowing_spd. change to off state
+	SYS_STATE_APO_DTIME_ADJ  //change sys_def_APO_DTIME. change to offstate(3s or pw)
+*/
 struct SystemFlags {
 	unsigned ms10_flag:1;
 	unsigned ms50_flag:1;
@@ -73,10 +83,12 @@ struct SystemFlags {
 	unsigned ms200_flag:1;
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
+	unsigned s1_flag:1;
 	unsigned fanRotate:2;
 	unsigned ms125_flag:1;
 	unsigned blower_apo_time_out:1;
-
+	unsigned sys_state_off_changing:1;
+	unsigned sys_state_apo_dtime_adj:1;
 	unsigned light_state:1;
 	unsigned led_backlight:1;
 	unsigned time_adj_stage:1;

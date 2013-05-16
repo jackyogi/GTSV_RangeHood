@@ -37,6 +37,7 @@ struct SystemFlags  gSystemFlags = {
 	.ctime_hrs = 0,
 	.ctime_mins =0,
 	.fan_spd_default = 1,
+	.blower_apo_mins =1,
 };
 uint32_t _LCD_RAM[8];
 
@@ -133,6 +134,10 @@ void main_tick(void)
 
 	Tsense_key_detect();
 
+	if(gSystemFlags.ms50_flag){
+		gSystemFlags.ms50_flag=0;
+
+	}
 	main_big_switch();
 /*
 	Lcd_icon_fan(Lcd_get_fan_cursor_slow());
@@ -143,6 +148,7 @@ void main_tick(void)
 */
 //for any SYS State
 	if(Tsense_check_key_up(TSENSE_KEY_LIGHT)){
+		Buzzer_bip();
 		gSystemFlags.light_state ^= 1;
 	}
 
@@ -154,8 +160,9 @@ void main_tick(void)
 		MAIN_LAMP_OFF;
 	}
 
-	if((gSystemFlags.sys_state == SYS_STATE_OFF) &&
-		(gSystemFlags.light_state == 0)){
+	if((gSystemFlags.sys_state == SYS_STATE_OFF)
+		&&(gSystemFlags.light_state == 0)
+		&& !Tsense_check_key_holding(TSENSE_KEY_ANY)){
 		LED_ALL_OFF;
 	}else{
 		LED_ALL_ON;
@@ -177,49 +184,71 @@ void main_big_switch(void)
 		break;
 	case SYS_STATE_OFF:
 		//*****update LCD & LED
-		Lcd_fill_pos_with_num(0, 11);
-		Lcd_fill_pos_with_num(1, 11);
-		Lcd_fill_pos_with_num(2, 11);
-		Lcd_fill_pos_with_num(3, 11);
-		Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, 11); //off
-		Lcd_icon_fan(3);  //fan icons off
-		Lcd_icon_off(LCD_ICON_COLON1);
-		Lcd_icon_off(LCD_ICON_CLOCK);
-		Lcd_fill_hour2(RTC_TimeStructure.RTC_Hours);
-		Lcd_fill_min2(RTC_TimeStructure.RTC_Minutes);
-		//blink colon2 icon
-		if(Lcd_get_blink_cursor()){
-			Lcd_icon_on(LCD_ICON_COLON2);
-		}else{
+		if(!gSystemFlags.sys_state_off_changing){
+			Lcd_clear_hour2_min2();
+			Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, 11); //off
+			Lcd_icon_fan(3);  //fan icons off
 			Lcd_icon_off(LCD_ICON_COLON2);
-		}
+			Lcd_icon_off(LCD_ICON_CLOCK);
+			Lcd_fill_hour1(RTC_TimeStructure.RTC_Hours);
+			Lcd_fill_min1(RTC_TimeStructure.RTC_Minutes);
+			//blink colon2 icon
+			if(Lcd_get_blink_cursor()){
+				Lcd_icon_on(LCD_ICON_COLON1);
+			}else{
+				Lcd_icon_off(LCD_ICON_COLON1);
+			}
 
-		
+		}
 
 		//*****check keys
 		//key power  --> begin blowing with def spd & counting time
-		if(Tsense_check_key(TSENSE_KEY_POWER)){
+		if(Tsense_check_key_up(TSENSE_KEY_POWER)
+				&& !gSystemFlags.sys_state_off_changing){
+			Buzzer_bip();
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Ctime_begin_counting();
 			Blower_set_speed(gSystemFlags.fan_spd_default);
 		}
 		//hold key minus --> change to Dtime_adj
-		if(Tsense_check_key_holding(TSENSE_KEY_MINUS)){
-			gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
+		if(gSystemFlags.sys_state_off_changing){
+			if(Tsense_check_key_up(TSENSE_KEY_MINUS)
+						|| Tsense_check_key_up(TSENSE_KEY_POWER)){
+
+				Buzzer_bip();
+				gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
+				gSystemFlags.time_adj_delay =0;
+
+			}
 		}
-		//hold key Pluss --> clear ctime & change to blowing
+		if(Tsense_check_key_holding(TSENSE_KEY_MINUS)
+				|| Tsense_check_key_holding(TSENSE_KEY_POWER)){
+
+			gSystemFlags.sys_state_off_changing = 1;
+			Lcd_icon_off(LCD_ICON_COLON1); //off colon1 icon
+			Lcd_icon_fan(5); //off fan icons
+			Lcd_clear_hour1_min1();
+			Lcd_icon_on(LCD_ICON_CLOCK); //on clock icon
+			Lcd_icon_on(LCD_ICON_COLON2); //on colon2 icon
+			Lcd_fill_hour2(gSystemFlags.blower_apo_mins);
+			Lcd_fill_min2(0);
+		}
+
+		//hold key Plus --> clear ctime & change to blowing
 		if(Tsense_check_key_holding(TSENSE_KEY_PLUS)){
+			Buzzer_bip();
 			Ctime_to_zero();
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Ctime_begin_counting();
 			Blower_set_speed(gSystemFlags.fan_spd_default);
 		}
+		//gSystemFlags.sys_state_apo_dtime_adj=0;
 
 		break;
 	case SYS_STATE_BLOWING:
 		//*****update LCD & LED
 		Lcd_icon_off(LCD_ICON_CLOCK);
-		
+
 		//blink colon1 icon
 		if(Lcd_get_blink_cursor()){
 			Lcd_icon_on(LCD_ICON_COLON1);
@@ -245,32 +274,166 @@ void main_big_switch(void)
 		////*****check keys
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)){
-			if(gSystemFlags.fan_spd_default<4)
+			Buzzer_bip();
+			if(gSystemFlags.fan_spd_default<4){
 				gSystemFlags.fan_spd_default++;
+			}
 			Blower_set_speed(gSystemFlags.fan_spd_default);
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)){
-			if(gSystemFlags.fan_spd_default>1)
+			Buzzer_bip();
+			if(gSystemFlags.fan_spd_default>1){
 				gSystemFlags.fan_spd_default--;
+
+			}
 			Blower_set_speed(gSystemFlags.fan_spd_default);
 		}
 		//PW key & not holding  -> change to off
 		if(Tsense_check_key_up(TSENSE_KEY_POWER)
 			&&(!Tsense_check_key_holding(TSENSE_KEY_POWER))){
+			Buzzer_bip();
 			gSystemFlags.sys_state = SYS_STATE_OFF;
 			Blower_set_speed(0);
+			Ctime_stop_counting();
 		}
 		//hold PW key  --> to APO BLOWING with default APO Dtime
 		if(Tsense_check_key_holding(TSENSE_KEY_POWER)){
-
+			Buzzer_bip();
+			gSystemFlags.sys_state = SYS_STATE_APO_BLOWING;
+			gSystemFlags.blower_apo_remaining_sec = gSystemFlags.blower_apo_mins*60;
+			gSystemFlags.blower_apo_time_out = 0;
+			//Lcd_clear();
 		}
 		break;
 	case SYS_STATE_APO_BLOWING:
+		//*****update LCD & LED
+		Lcd_icon_on(LCD_ICON_CLOCK);
+		//fill ctime
+		Lcd_fill_hour1(gSystemFlags.ctime_hrs);
+		Lcd_fill_min1(gSystemFlags.ctime_mins);
+		//fill remaining Time
+		Lcd_fill_hour2(gSystemFlags.blower_apo_remaining_sec/60);
+		Lcd_fill_min2(gSystemFlags.blower_apo_remaining_sec%60);
+
+		if(Lcd_get_blink_cursor()){
+			Lcd_icon_on(LCD_ICON_COLON1);
+			Lcd_icon_on(LCD_ICON_COLON2);
+		}else{
+			Lcd_icon_off(LCD_ICON_COLON1);
+			Lcd_icon_off(LCD_ICON_COLON2);
+		}
+		//fan rotate
+		if(gSystemFlags.fan_spd>2)
+			Lcd_icon_fan(Lcd_get_fan_cursor_fast());
+		else
+			Lcd_icon_fan(Lcd_get_fan_cursor_slow());
+		//fill fan spd
+		Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, gSystemFlags.fan_spd);
+
+
+		//check API time out
+		if(gSystemFlags.blower_apo_time_out){
+			Blower_set_speed(0);
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+			Lcd_clear();
+			//all_ui_led_off();
+			Buzzer_bip();
+			Ctime_stop_counting();
+		}
+
+		//key plus
+		if(Tsense_check_key(TSENSE_KEY_PLUS)){
+			Buzzer_bip();
+			if(gSystemFlags.fan_spd_default<4){
+				gSystemFlags.fan_spd_default++;
+			}
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+		}
+		//key minus
+		if(Tsense_check_key(TSENSE_KEY_MINUS)){
+			Buzzer_bip();
+			if(gSystemFlags.fan_spd_default>1){
+				gSystemFlags.fan_spd_default--;
+
+			}
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+		}
+		//PW key & not holding  -> change to off
+		if(Tsense_check_key_up(TSENSE_KEY_POWER)
+			&&(!Tsense_check_key_holding(TSENSE_KEY_POWER))){
+			Buzzer_bip();
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+			Blower_set_speed(0);
+			Ctime_stop_counting();
+		}
 		break;
 	case SYS_STATE_APO_DTIME_ADJ:
+
+		//*****update LCD & LED
+		Lcd_icon_off(LCD_ICON_COLON1); //off colon1 icon
+		Lcd_icon_fan(5); //off fan icons
+		Lcd_clear_hour1_min1();
+
+		Lcd_icon_on(LCD_ICON_CLOCK); //on clock icon
+		Lcd_icon_on(LCD_ICON_COLON2); //on colon2 icon
+
+		//blink colon1 icon
+		if(Lcd_get_blink_cursor()
+			     || Tsense_check_key_touching(TSENSE_KEY_PLUS)
+			     || Tsense_check_key_touching(TSENSE_KEY_MINUS)
+			     || Tsense_check_key(TSENSE_KEY_MINUS)){
+
+			Lcd_fill_hour2(gSystemFlags.blower_apo_mins);
+			Lcd_fill_min2(0);  //min2 == 0
+		}else{
+			Lcd_clear_hour2_min2();
+		}
+
+		//******check time out
+		//count time adj delay
+		if(gSystemFlags.s1_flag){
+			gSystemFlags.s1_flag =0;
+			gSystemFlags.time_adj_delay++;
+		}
+		if(Tsense_check_key_touching(TSENSE_KEY_ANY))
+			gSystemFlags.time_adj_delay =0;
+		//check time out time adjust delay
+		if(gSystemFlags.time_adj_delay>8){
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+		}
+
+		//******check keys
+		if(Tsense_check_key_up(TSENSE_KEY_POWER)
+				&& !gSystemFlags.sys_state_off_changing){
+			//gSystemFlags.sys_state_apo_dtime_adj=1;
+			Buzzer_bip();
+			gSystemFlags.sys_state = SYS_STATE_OFF;
+		}
+		if(Tsense_check_key(TSENSE_KEY_PLUS)
+				|| (Tsense_check_key_holding(TSENSE_KEY_PLUS) && gSystemFlags.ms300_flag) ){
+			gSystemFlags.ms300_flag=0;
+			Buzzer_bip();
+
+			if(gSystemFlags.blower_apo_mins>15)
+				gSystemFlags.blower_apo_mins = 1;
+			else
+				gSystemFlags.blower_apo_mins++;
+		}
+		if(Tsense_check_key(TSENSE_KEY_MINUS)
+				|| (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms300_flag) ){
+			gSystemFlags.ms300_flag=0;
+			Buzzer_bip();
+
+			if(gSystemFlags.blower_apo_mins==1)
+				gSystemFlags.blower_apo_mins = 15;
+			else
+				gSystemFlags.blower_apo_mins--;
+		}
+		gSystemFlags.sys_state_off_changing = 0;
 		break;
 	default:
+		gSystemFlags.sys_state = SYS_STATE_OFF;
 		break;
 
 	};

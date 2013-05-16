@@ -210,6 +210,7 @@ void RTC_WKUP_IRQHandler (void)
 {
 	static uint8_t ms125Tick = 0;
 	static uint16_t sec1Tick = 0;
+	static uint8_t secTick = 0;
 
 	gSystemFlags.ms125_flag=1;
 
@@ -218,6 +219,7 @@ void RTC_WKUP_IRQHandler (void)
 	if(ms125Tick == 8){ //1s tick here!
 		ms125Tick=0;
 		sec1Tick++;
+		gSystemFlags.s1_flag = 1;
 		//check time out in Blowing Auto Power Off
 		if(gSystemFlags.sys_state == SYS_STATE_APO_BLOWING){
 			if(gSystemFlags.blower_apo_remaining_sec == 0){
@@ -226,6 +228,13 @@ void RTC_WKUP_IRQHandler (void)
 				gSystemFlags.blower_apo_remaining_sec--;
 			}
 		}
+
+		secTick++;
+		if(secTick == 60){
+			secTick = 0;
+			Ctime_tick_min();
+		}
+		
 	}
 
 	Tsense_key_hold_detect_tick125ms();
