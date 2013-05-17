@@ -134,9 +134,9 @@ void Tsense_to_default_config(void)
 	#endif
 
 
-	sSCKeyInfo[1].DetectThreshold = 89;
-	sSCKeyInfo[1].EndDetectThreshold = 89;
-	sSCKeyInfo[1].RecalibrationThreshold = -22;
+	//sSCKeyInfo[1].DetectThreshold = 93;
+	//sSCKeyInfo[1].EndDetectThreshold = 99;
+	//sSCKeyInfo[1].RecalibrationThreshold = -22;
 	
 	// Change thresholds of specific keys
 	/*

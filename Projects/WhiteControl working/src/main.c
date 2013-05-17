@@ -420,8 +420,9 @@ void main_big_switch(void)
 			else
 				gSystemFlags.blower_apo_mins++;
 		}
-		if(Tsense_check_key(TSENSE_KEY_MINUS)
-				|| (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms300_flag) ){
+		if((Tsense_check_key(TSENSE_KEY_MINUS)
+				|| (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms300_flag))
+				&& (!gSystemFlags.sys_state_off_changing)){
 			gSystemFlags.ms300_flag=0;
 			Buzzer_bip();
 
