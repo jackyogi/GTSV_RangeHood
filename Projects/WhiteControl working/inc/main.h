@@ -201,6 +201,11 @@ void Ctime_to_zero(void);
 void Ctime_tick_min(void);
 bool Ctime_check_overtime(void);
 
+void Ports_to_input_slave_config(void);
+void Ports_to_output_master_config(void);
+
+
+
 #endif /* __MAIN_H */
 
 /******************* (C) COPYRIGHT 2010 STMicroelectronics *****END OF FILE****/

@@ -39,7 +39,7 @@ struct SystemFlags  gSystemFlags = {
 	.fan_spd_default = 1,
 	.blower_apo_mins =1,
 };
-uint32_t _LCD_RAM[8];
+
 
 uint16_t msTicks;
 
@@ -114,17 +114,11 @@ int main(void)
 			gSystemFlags.ms100_flag = 0;
 			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 		}
-
-
 		if(gSystemFlags.ms500_flag){
 			gSystemFlags.ms500_flag = 0;
-
-
-
 		}
 
 		Spilcd_flush_buf_to_lcd();
-
 	}
 }
 
@@ -139,13 +133,7 @@ void main_tick(void)
 
 	}
 	main_big_switch();
-/*
-	Lcd_icon_fan(Lcd_get_fan_cursor_slow());
-	if(Lcd_get_blink_cursor())
-		Lcd_icon_on(LCD_ICON_COLON1);
-	else
-		Lcd_icon_off(LCD_ICON_COLON1);
-*/
+
 //for any SYS State
 	if(Tsense_check_key_up(TSENSE_KEY_LIGHT)){
 		Buzzer_bip();
@@ -527,7 +515,38 @@ void Ports_to_default_config(void)
 	GPIO_SetBits(GPIOC, GPIO_Pin_12);
 	//GPIO_ResetBits(GPIOC, GPIO_Pin_12);
 
-//config GPIO for FAN: open drain w/ pull up
+	Spilcd_configure_GPIO();
+	Ports_to_input_slave_config();
+
+}
+
+void Ports_to_input_slave_config(void)
+{
+	//config GPIO for FAN: open drain w/ pull up
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+//config GPIO for LMP  : open drain w/ pull up
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+}
+
+void Ports_to_output_master_config(void)
+{
+	//config GPIO for FAN: open drain w/ pull up
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -546,10 +565,8 @@ void Ports_to_default_config(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	Spilcd_configure_GPIO();
-
 }
+
 
 void Cpu_to_default_config(void)
 {
