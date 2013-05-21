@@ -55,5 +55,8 @@ void Lcd_fill_min2(uint8_t num);
 void Lcd_clear_hour2_min2(void);
 void Lcd_clear_hour1_min1(void);
 
+void Lcd_clear_min1(void);
+void Lcd_clear_hour1(void);
+
 
 #endif

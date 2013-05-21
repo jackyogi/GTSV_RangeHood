@@ -143,14 +143,16 @@ void SysTick_Handler(void)
 		gSystemFlags.ms10_flag =1;
 		if((msTicks%50) == 0){
 			gSystemFlags.ms50_flag = 1;
-			
+			Serial_time_tick50ms();
 			if((msTicks%100) == 0){
-				
+				gSystemFlags.rtc_update_flag =1;
 				gSystemFlags.ms100_flag = 1;
 				if((msTicks%200)==0)
 					gSystemFlags.ms200_flag =1;
-				if((msTicks%300) == 0)
+				if((msTicks%300) == 0){
 					gSystemFlags.ms300_flag = 1;
+					gSystemFlags.uart_update_flag = 1;
+				}
 				if((msTicks%500) == 0)
 					gSystemFlags.ms500_flag = 1;
 
@@ -228,7 +230,15 @@ void RTC_WKUP_IRQHandler (void)
 				gSystemFlags.blower_apo_remaining_sec--;
 			}
 		}
-
+		gSystemFlags.s1_flag = 1;
+		gSystemFlags.uid_update_flag =1;
+		if(sec1Tick%2)
+			gSystemFlags.s2_flag=1;
+		if(sec1Tick%3)
+			gSystemFlags.s3_flag=1;
+		if(sec1Tick%5)
+			gSystemFlags.s5_flag=1;
+		
 		secTick++;
 		if(secTick == 60){
 			secTick = 0;
@@ -247,6 +257,21 @@ void RTC_WKUP_IRQHandler (void)
 
 
 }
+
+void USART3_IRQHandler(void)
+{
+	if(USART_GetITStatus(USART3, USART_IT_RXNE) == SET){
+		Serial_rx_ISR();
+	}
+
+	if(USART_GetITStatus(USART3, USART_IT_TXE) == SET){
+		//USART1->SR 
+		Serial_tx_ISR();
+	}
+
+
+}
+
 
 /******************************************************************************/
 /*                 STM32L1xx Peripherals Interrupt Handlers                   */

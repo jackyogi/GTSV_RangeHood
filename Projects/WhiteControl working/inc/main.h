@@ -90,7 +90,10 @@ struct SystemFlags {
 	unsigned ms200_flag:1;
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
+	unsigned uart_update_flag:1;
+	unsigned rtc_update_flag:1;
 	unsigned s1_flag:1;
+	unsigned uid_update_flag:1;
 	unsigned s2_flag:1;
 	unsigned s3_flag:1;
 	unsigned s5_flag:1;

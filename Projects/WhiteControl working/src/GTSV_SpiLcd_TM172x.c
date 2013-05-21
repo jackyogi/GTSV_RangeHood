@@ -120,6 +120,17 @@ void Lcd_fill_min2(uint8_t num)
 	Lcd_fill_2pos_with_num(6, num);
 }
 
+void Lcd_clear_hour1(void)
+{
+	Lcd_fill_pos_with_num(0, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(1, LCD_CHAR_CLEAR);
+}
+void Lcd_clear_min1(void)
+{
+	Lcd_fill_pos_with_num(2, LCD_CHAR_CLEAR);
+	Lcd_fill_pos_with_num(3, LCD_CHAR_CLEAR);
+}
+
 void Lcd_clear_hour1_min1(void)
 {
 	Lcd_fill_pos_with_num(0, LCD_CHAR_CLEAR);

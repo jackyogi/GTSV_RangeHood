@@ -121,9 +121,9 @@ int main(void)
 		TSL_Action();
 
 		main_tick();
-		
 
-		
+
+
 	}
 }
 
@@ -133,13 +133,13 @@ void main_tick(void)
 
 	Tsense_key_detect();
 	Serial_cmd_detect();
-	
+
 	main_big_switch();
 
-	if(gSystemFlags.s1_flag){
+	if(gSystemFlags.uid_update_flag){
 		static uint8_t uid_cnt=0;
-		gSystemFlags.s1_flag = 0;
-		
+		gSystemFlags.uid_update_flag = 0;
+
 		Serial_send_my_uid();
 
 		if(uid_cnt<3){
@@ -157,7 +157,7 @@ void main_tick(void)
 
 
 //for any SYS State
-	if(Tsense_check_key_up(TSENSE_KEY_LIGHT)){
+	if(Tsense_check_key(TSENSE_KEY_LIGHT) && (gSystemFlags.sys_state != SYS_STATE_CLK_ADJ)){
 		Buzzer_bip();
 		gSystemFlags.light_state ^= 1;
 		gSystemFlags.control_master = TRUE;
@@ -178,7 +178,7 @@ void main_tick(void)
 	}else{
 		LED_ALL_ON;
 	}
-	
+
 
 	if(gSystemFlags.working_mode== WORKING_INPUT_SLAVE){
 			Ports_to_input_slave_config();
@@ -191,13 +191,13 @@ void main_tick(void)
 		//Ports_to_input_slave_config();
 	}
 
-	if((gSystemFlags.control_master) && gSystemFlags.ms300_flag){
+	if((gSystemFlags.control_master) && gSystemFlags.uart_update_flag){
 		Serial_tx_send_sys_state_upd_cmd();
-		gSystemFlags.ms300_flag = 0;
+		gSystemFlags.uart_update_flag = 0;
 	}
-	
-	if(gSystemFlags.ms100_flag){
-		gSystemFlags.ms100_flag = 0;
+
+	if(gSystemFlags.rtc_update_flag){
+		gSystemFlags.rtc_update_flag = 0;
 		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 	}
 /*
@@ -219,6 +219,142 @@ void main_big_switch(void)
 	case SYS_STATE_INITIAL:
 		gSystemFlags.sys_state = SYS_STATE_OFF;
 		break;
+	case SYS_STATE_CLK_ADJ:
+		//*****update LCD & LED
+
+		if(gSystemFlags.time_adj_stage == 0){
+			Lcd_fill_min1(gSystemFlags.tmp_min);
+			//blink colon1 icon
+			if(Lcd_get_blink_cursor()
+				     || Tsense_check_key_touching(TSENSE_KEY_PLUS)
+				     || Tsense_check_key_touching(TSENSE_KEY_MINUS)
+				     || Tsense_check_key(TSENSE_KEY_MINUS)){
+
+				Lcd_fill_hour1(gSystemFlags.tmp_hour);
+			}else{
+				Lcd_clear_hour1();
+			}
+
+			//******check time out
+			//count time adj delay
+			if(gSystemFlags.s1_flag){
+				gSystemFlags.s1_flag =0;
+				gSystemFlags.time_adj_delay++;
+
+			}
+			if(Tsense_check_key_touching(TSENSE_KEY_ANY))
+				gSystemFlags.time_adj_delay =0;
+			//check time out time adjust delay
+			if(gSystemFlags.time_adj_delay>8){
+				gSystemFlags.time_adj_stage++;
+				gSystemFlags.time_adj_delay =0;
+				Buzzer_bip();
+			}
+
+			//*****check key
+			//key timer
+			if(Tsense_check_key(TSENSE_KEY_LIGHT)){
+				gSystemFlags.time_adj_stage++;
+				gSystemFlags.time_adj_delay =0;
+				Buzzer_bip();
+				gSystemFlags.control_master = TRUE;
+			}
+			//key plus
+			if(Tsense_check_key(TSENSE_KEY_PLUS)
+			     ||(Tsense_check_key_holding(TSENSE_KEY_PLUS) && gSystemFlags.ms300_flag)){
+			    gSystemFlags.ms300_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_hour == 23)
+					gSystemFlags.tmp_hour = 0;
+				else
+					gSystemFlags.tmp_hour++;
+				Buzzer_bip();
+				gSystemFlags.control_master = TRUE;
+			}
+			//key minus
+			if(Tsense_check_key(TSENSE_KEY_MINUS)
+			      ||(Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms300_flag)){
+
+			    gSystemFlags.ms300_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_hour == 0)
+					gSystemFlags.tmp_hour = 23;
+				else
+					gSystemFlags.tmp_hour--;
+				Buzzer_bip();
+				gSystemFlags.control_master = TRUE;
+			}
+
+
+		}else{
+			//*****update LCD & LED
+			Lcd_fill_hour1(gSystemFlags.tmp_hour);
+			if(Lcd_get_blink_cursor()
+				     || Tsense_check_key_touching(TSENSE_KEY_PLUS)
+				     || Tsense_check_key_touching(TSENSE_KEY_MINUS)
+				     || Tsense_check_key(TSENSE_KEY_MINUS)){
+
+				Lcd_fill_min1(gSystemFlags.tmp_min);
+			}else{
+				Lcd_clear_min1();
+			}
+
+
+
+			//******check time out
+			//count time adj delay
+			if(gSystemFlags.s1_flag){
+				gSystemFlags.s1_flag =0;
+				gSystemFlags.time_adj_delay++;
+			}
+			if(Tsense_check_key_touching(TSENSE_KEY_ANY))
+				gSystemFlags.time_adj_delay =0;
+			//check time out time adjust delay
+			if(gSystemFlags.time_adj_delay>8){
+				RTC_change_time(gSystemFlags.tmp_hour, gSystemFlags.tmp_min, 0);
+				gSystemFlags.sys_state = SYS_STATE_OFF;
+				Buzzer_bip();
+
+				gSystemFlags.control_master = TRUE;
+			}
+			///*****Check Key
+			///key timer
+			if(Tsense_check_key(TSENSE_KEY_LIGHT)){
+				RTC_change_time(gSystemFlags.tmp_hour, gSystemFlags.tmp_min, 0);
+				gSystemFlags.sys_state = SYS_STATE_OFF;
+				Buzzer_bip();
+				gSystemFlags.control_master = TRUE;
+			}
+
+			//key plus
+			if(Tsense_check_key(TSENSE_KEY_PLUS)
+				     || (Tsense_check_key_holding(TSENSE_KEY_PLUS) && gSystemFlags.ms300_flag) ){
+
+			    gSystemFlags.ms300_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_min == 59)
+					gSystemFlags.tmp_min= 0;
+				else
+					gSystemFlags.tmp_min++;
+				Buzzer_bip();
+				gSystemFlags.control_master = TRUE;
+			}
+			//key minus
+			if(Tsense_check_key(TSENSE_KEY_MINUS)
+			      || (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms300_flag) ){
+
+			    gSystemFlags.ms300_flag =0;
+			    gSystemFlags.time_adj_delay = 0;
+				if(gSystemFlags.tmp_min == 0)
+					gSystemFlags.tmp_min = 59;
+				else
+					gSystemFlags.tmp_min--;
+				Buzzer_bip();
+				gSystemFlags.control_master = TRUE;
+			}
+		}
+		break;
+
 	case SYS_STATE_OFF:
 		//*****update LCD & LED
 		//if(!gSystemFlags.sys_state_off_changing){
@@ -239,6 +375,15 @@ void main_big_switch(void)
 		//}
 
 		//*****check keys
+		if(Tsense_check_key_holding(TSENSE_KEY_LIGHT)){
+			Buzzer_bip();
+			gSystemFlags.tmp_hour = RTC_TimeStructure.RTC_Hours;
+			gSystemFlags.tmp_min = RTC_TimeStructure.RTC_Minutes;
+			gSystemFlags.time_adj_stage =0;
+			gSystemFlags.sys_state = SYS_STATE_CLK_ADJ;
+			gSystemFlags.time_adj_delay=0;
+			gSystemFlags.control_master = TRUE;
+		}
 		//key power  --> begin blowing with def spd & counting time
 		if(Tsense_check_key_up(TSENSE_KEY_POWER)
 				&& !gSystemFlags.sys_state_off_changing){
@@ -567,8 +712,8 @@ void Blower_set_speed(uint8_t spd)
 
 void Ports_to_default_config(void)
 {
-	
-	
+
+
 //config GPIO for USART3
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
