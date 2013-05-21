@@ -29,6 +29,7 @@
 #include "GTSV_SpiLcd_TM172x.h"
 #include "buzzer.h"
 #include "GTSV_TSense.h"
+#include "GTSV_Serial.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -64,8 +65,14 @@ enum System_State_Enum_t {
 				//plus--> blowing spd1; minus --> blowing spd4
 	SYS_STATE_BLOWING,  //change system default blowing speed. Change to APO state(hold PW) change to off state(PW)
 	SYS_STATE_APO_BLOWING,//change Sys_def_blowing_spd. change to off state
-	SYS_STATE_APO_DTIME_ADJ  //change sys_def_APO_DTIME. change to offstate(3s or pw)
+	SYS_STATE_APO_DTIME_ADJ,  //change sys_def_APO_DTIME. change to offstate(3s or pw)
+	SYS_STATE_CLK_ADJ
 
+};
+
+enum System_Working_Mode_Enum_t {
+	WORKING_INPUT_SLAVE,
+	WORKING_OUTPUT_MASTER
 };
 
 /*
@@ -84,14 +91,22 @@ struct SystemFlags {
 	unsigned ms500_flag:1;
 	unsigned ms300_flag:1;
 	unsigned s1_flag:1;
+	unsigned s2_flag:1;
+	unsigned s3_flag:1;
+	unsigned s5_flag:1;
+	
 	unsigned fanRotate:2;
 	unsigned ms125_flag:1;
-	unsigned blower_apo_time_out:1;
 	unsigned sys_state_off_changing:1;
 	unsigned sys_state_apo_dtime_adj:1;
 	unsigned light_state:1;
 	unsigned led_backlight:1;
+	
 	unsigned time_adj_stage:1;
+	unsigned blower_apo_time_out:1;
+	unsigned partner_uid_valid:1;
+	unsigned control_master:1;
+	enum System_Working_Mode_Enum_t working_mode;
 
 	unsigned ctime_counting:1;
 
@@ -102,7 +117,7 @@ struct SystemFlags {
 
 
 
-
+	
 	enum System_State_Enum_t sys_state;
 	uint16_t blower_apo_remaining_sec;
 
@@ -113,12 +128,16 @@ struct SystemFlags {
 	uint8_t ctime_hrs;
 	uint8_t ctime_mins;
 
+	uint8_t system_uid[12];
+	uint8_t partner_uid[12];
 
 };
 
 
 extern uint16_t msTicks;
 extern struct SystemFlags gSystemFlags;
+extern struct Serial_Tx_Packet_t tx_pk;
+extern struct Serial_Cmd_Result_t results;
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -141,6 +160,11 @@ extern struct SystemFlags gSystemFlags;
 #define BITBAND_SRAM(a,b) ((PERIPH_BB_BASE + (a-PERIPH_BASE)*32 + (b*4)))
 #endif
 
+#define U_ID_0 (*(uint32_t*) 0x1FF80050)
+#define U_ID_1 (*(uint32_t*) 0x1FF80054)
+#define U_ID_2 (*(uint32_t*) 0x1FF80058)
+
+#define MY_UID_0_ADDR	((uint8_t*) 0x1FF80050)
 
 #define BITBAND_POINTER_AT(a,b)\
 			*((volatile unsigned char *)(BITBAND_PERI(a,b)))
@@ -189,6 +213,10 @@ extern struct SystemFlags gSystemFlags;
 void Cpu_to_default_config(void);
 void Get_system_clk_config(void);
 void Ports_to_default_config(void);
+
+void Ports_to_input_slave_config(void);
+void Ports_to_output_master_config(void);
+
 void Timers_to_default_config(void);
 void main_tick(void);
 void main_big_switch(void);
@@ -201,8 +229,6 @@ void Ctime_to_zero(void);
 void Ctime_tick_min(void);
 bool Ctime_check_overtime(void);
 
-void Ports_to_input_slave_config(void);
-void Ports_to_output_master_config(void);
 
 
 

@@ -38,8 +38,11 @@ struct SystemFlags  gSystemFlags = {
 	.ctime_mins =0,
 	.fan_spd_default = 1,
 	.blower_apo_mins =1,
+	.working_mode = WORKING_INPUT_SLAVE,
 };
 
+struct Serial_Cmd_Result_t results;
+struct Serial_Tx_Packet_t tx_pk;
 
 uint16_t msTicks;
 
@@ -78,6 +81,8 @@ void Spi_to_default_config(void);
   */
 int main(void)
 {
+	int i;
+ 	uint8_t *pu8_tmp;
 
  /*!< At this stage the microcontroller clock setting is already configured,
        this is done through SystemInit() function which is called from startup
@@ -85,7 +90,6 @@ int main(void)
        To reconfigure the default setting of SystemInit() function, refer to
        system_stm32l1xx.c file
      */
-	int i;
 #ifdef DEBUG
 	//get system config for debug purposes
 	Get_system_clk_config();
@@ -99,26 +103,27 @@ int main(void)
 	Tsense_to_default_config();
 	//Timers_to_default_config();
 	Spilcd_to_default_config();
+	Usart_to_default_config();
+	//Usart_to_default_config();
 
-
+	//get my UID
+	pu8_tmp = MY_UID_0_ADDR;
+	for(i=0; i<12; i++){
+		gSystemFlags.system_uid[i] = *pu8_tmp;
+		pu8_tmp++;
+	}
 
 	//Lcd_set();
-	gSystemFlags.sys_state = SYS_STATE_OFF;
+	gSystemFlags.sys_state = SYS_STATE_INITIAL;
 	while (1)
 	{
 		// Run TSL RC state machine
 		TSL_Action();
 
 		main_tick();
-		if(gSystemFlags.ms100_flag){
-			gSystemFlags.ms100_flag = 0;
-			RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
-		}
-		if(gSystemFlags.ms500_flag){
-			gSystemFlags.ms500_flag = 0;
-		}
+		
 
-		Spilcd_flush_buf_to_lcd();
+		
 	}
 }
 
@@ -127,17 +132,35 @@ void main_tick(void)
 {
 
 	Tsense_key_detect();
-
-	if(gSystemFlags.ms50_flag){
-		gSystemFlags.ms50_flag=0;
-
-	}
+	Serial_cmd_detect();
+	
 	main_big_switch();
+
+	if(gSystemFlags.s1_flag){
+		static uint8_t uid_cnt=0;
+		gSystemFlags.s1_flag = 0;
+		
+		Serial_send_my_uid();
+
+		if(uid_cnt<3){
+			uid_cnt++;
+		}else{
+
+			if(!gSystemFlags.partner_uid_valid){
+				gSystemFlags.working_mode = WORKING_OUTPUT_MASTER;
+			}
+			uid_cnt = 0;
+			gSystemFlags.partner_uid_valid = FALSE;
+		}
+	}
+
+
 
 //for any SYS State
 	if(Tsense_check_key_up(TSENSE_KEY_LIGHT)){
 		Buzzer_bip();
 		gSystemFlags.light_state ^= 1;
+		gSystemFlags.control_master = TRUE;
 	}
 
 	if(gSystemFlags.light_state){
@@ -155,9 +178,35 @@ void main_tick(void)
 	}else{
 		LED_ALL_ON;
 	}
+	
 
+	if(gSystemFlags.working_mode== WORKING_INPUT_SLAVE){
+			Ports_to_input_slave_config();
+			//Lcd_icon_off(LCD_ICON_LIGHT);
+	}
 
+	if(gSystemFlags.working_mode == WORKING_OUTPUT_MASTER){
+		Ports_to_output_master_config();
+		//Lcd_icon_on(LCD_ICON_LIGHT);
+		//Ports_to_input_slave_config();
+	}
 
+	if((gSystemFlags.control_master) && gSystemFlags.ms300_flag){
+		Serial_tx_send_sys_state_upd_cmd();
+		gSystemFlags.ms300_flag = 0;
+	}
+	
+	if(gSystemFlags.ms100_flag){
+		gSystemFlags.ms100_flag = 0;
+		RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
+	}
+/*
+	if(gSystemFlags.partner_uid_valid)
+		Lcd_icon_on(LCD_ICON_CLOCK);
+	else
+		Lcd_icon_off(LCD_ICON_CLOCK);
+*/
+	Spilcd_flush_buf_to_lcd();
 }
 
 
@@ -172,7 +221,7 @@ void main_big_switch(void)
 		break;
 	case SYS_STATE_OFF:
 		//*****update LCD & LED
-		if(!gSystemFlags.sys_state_off_changing){
+		//if(!gSystemFlags.sys_state_off_changing){
 			Lcd_clear_hour2_min2();
 			Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, 11); //off
 			Lcd_icon_fan(3);  //fan icons off
@@ -187,7 +236,7 @@ void main_big_switch(void)
 				Lcd_icon_off(LCD_ICON_COLON1);
 			}
 
-		}
+		//}
 
 		//*****check keys
 		//key power  --> begin blowing with def spd & counting time
@@ -197,6 +246,7 @@ void main_big_switch(void)
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Ctime_begin_counting();
 			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
 		}
 		//hold key minus --> change to Dtime_adj
 		if(gSystemFlags.sys_state_off_changing){
@@ -206,7 +256,12 @@ void main_big_switch(void)
 				Buzzer_bip();
 				gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
 				gSystemFlags.time_adj_delay =0;
-
+				if(Tsense_check_key_up(TSENSE_KEY_MINUS)){
+					if(gSystemFlags.blower_apo_mins == 15)
+						gSystemFlags.blower_apo_mins = 1;
+					else
+						gSystemFlags.blower_apo_mins += 1;
+				}
 			}
 		}
 		if(Tsense_check_key_holding(TSENSE_KEY_MINUS)
@@ -220,6 +275,7 @@ void main_big_switch(void)
 			Lcd_icon_on(LCD_ICON_COLON2); //on colon2 icon
 			Lcd_fill_hour2(gSystemFlags.blower_apo_mins);
 			Lcd_fill_min2(0);
+			gSystemFlags.control_master = TRUE;
 		}
 
 		//hold key Plus --> clear ctime & change to blowing
@@ -229,6 +285,7 @@ void main_big_switch(void)
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Ctime_begin_counting();
 			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
 		}
 		//gSystemFlags.sys_state_apo_dtime_adj=0;
 
@@ -263,19 +320,25 @@ void main_big_switch(void)
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)){
 			Buzzer_bip();
-			if(gSystemFlags.fan_spd_default<4){
+			if(gSystemFlags.fan_spd_default >= 4){
+				gSystemFlags.fan_spd_default = 1;
+			}else{
 				gSystemFlags.fan_spd_default++;
 			}
 			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)){
 			Buzzer_bip();
-			if(gSystemFlags.fan_spd_default>1){
-				gSystemFlags.fan_spd_default--;
+			if(gSystemFlags.fan_spd_default == 1){
+				gSystemFlags.fan_spd_default = 4;
 
+			}else{
+				gSystemFlags.fan_spd_default--;
 			}
 			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
 		}
 		//PW key & not holding  -> change to off
 		if(Tsense_check_key_up(TSENSE_KEY_POWER)
@@ -284,6 +347,7 @@ void main_big_switch(void)
 			gSystemFlags.sys_state = SYS_STATE_OFF;
 			Blower_set_speed(0);
 			Ctime_stop_counting();
+			gSystemFlags.control_master = TRUE;
 		}
 		//hold PW key  --> to APO BLOWING with default APO Dtime
 		if(Tsense_check_key_holding(TSENSE_KEY_POWER)){
@@ -292,6 +356,7 @@ void main_big_switch(void)
 			gSystemFlags.blower_apo_remaining_sec = gSystemFlags.blower_apo_mins*60;
 			gSystemFlags.blower_apo_time_out = 0;
 			//Lcd_clear();
+			gSystemFlags.control_master = TRUE;
 		}
 		break;
 	case SYS_STATE_APO_BLOWING:
@@ -333,19 +398,25 @@ void main_big_switch(void)
 		//key plus
 		if(Tsense_check_key(TSENSE_KEY_PLUS)){
 			Buzzer_bip();
-			if(gSystemFlags.fan_spd_default<4){
+			if(gSystemFlags.fan_spd_default >= 4){
+				gSystemFlags.fan_spd_default = 1;
+			}else{
 				gSystemFlags.fan_spd_default++;
 			}
 			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
 		}
 		//key minus
 		if(Tsense_check_key(TSENSE_KEY_MINUS)){
 			Buzzer_bip();
-			if(gSystemFlags.fan_spd_default>1){
-				gSystemFlags.fan_spd_default--;
+			if(gSystemFlags.fan_spd_default == 1){
+				gSystemFlags.fan_spd_default = 4;
 
+			}else{
+				gSystemFlags.fan_spd_default--;
 			}
 			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
 		}
 		//PW key & not holding  -> change to off
 		if(Tsense_check_key_up(TSENSE_KEY_POWER)
@@ -354,6 +425,7 @@ void main_big_switch(void)
 			gSystemFlags.sys_state = SYS_STATE_OFF;
 			Blower_set_speed(0);
 			Ctime_stop_counting();
+			gSystemFlags.control_master = TRUE;
 		}
 		break;
 	case SYS_STATE_APO_DTIME_ADJ:
@@ -397,16 +469,18 @@ void main_big_switch(void)
 			//gSystemFlags.sys_state_apo_dtime_adj=1;
 			Buzzer_bip();
 			gSystemFlags.sys_state = SYS_STATE_OFF;
+			gSystemFlags.control_master = TRUE;
 		}
 		if(Tsense_check_key(TSENSE_KEY_PLUS)
 				|| (Tsense_check_key_holding(TSENSE_KEY_PLUS) && gSystemFlags.ms300_flag) ){
 			gSystemFlags.ms300_flag=0;
 			Buzzer_bip();
 
-			if(gSystemFlags.blower_apo_mins>15)
+			if(gSystemFlags.blower_apo_mins>=15)
 				gSystemFlags.blower_apo_mins = 1;
 			else
 				gSystemFlags.blower_apo_mins++;
+			gSystemFlags.control_master = TRUE;
 		}
 		if((Tsense_check_key(TSENSE_KEY_MINUS)
 				|| (Tsense_check_key_holding(TSENSE_KEY_MINUS) && gSystemFlags.ms300_flag))
@@ -418,8 +492,13 @@ void main_big_switch(void)
 				gSystemFlags.blower_apo_mins = 15;
 			else
 				gSystemFlags.blower_apo_mins--;
+			gSystemFlags.control_master = TRUE;
 		}
-		gSystemFlags.sys_state_off_changing = 0;
+		if(gSystemFlags.sys_state_off_changing){
+			gSystemFlags.sys_state_off_changing = 0;
+			//if(Tsense_check_key_up(TSENSE_KEY_MINUS))
+				//gSystemFlags.blower_apo_mins+=2;
+		}
 		break;
 	default:
 		gSystemFlags.sys_state = SYS_STATE_OFF;
@@ -436,6 +515,7 @@ void Blower_set_speed(uint8_t spd)
 	switch(spd){
 	case 1:
 		gSystemFlags.fan_spd = 1;
+		//gSystemFlags.fan_spd_default = 1;
 		BLOWER_FAN1 = 1;
 		BLOWER_FAN2 = 0;
 		BLOWER_FAN3 = 0;
@@ -443,6 +523,7 @@ void Blower_set_speed(uint8_t spd)
 		break;
 	case 2:
 		gSystemFlags.fan_spd = 2;
+		//gSystemFlags.fan_spd_default = 2;
 		BLOWER_FAN1 = 0;
 		BLOWER_FAN2 = 1;
 		BLOWER_FAN3 = 0;
@@ -450,6 +531,7 @@ void Blower_set_speed(uint8_t spd)
 		break;
 	case 3:
 		gSystemFlags.fan_spd = 3;
+		//gSystemFlags.fan_spd_default = 3;
 		BLOWER_FAN1 = 0;
 		BLOWER_FAN2 = 0;
 		BLOWER_FAN3 = 1;
@@ -457,6 +539,7 @@ void Blower_set_speed(uint8_t spd)
 		break;
 	case 4:
 		gSystemFlags.fan_spd = 4;
+		//gSystemFlags.fan_spd_default = 4;
 		BLOWER_FAN1 = 0;
 		BLOWER_FAN2 = 0;
 		BLOWER_FAN3 = 0;
@@ -464,6 +547,7 @@ void Blower_set_speed(uint8_t spd)
 		break;
 	default:
 		gSystemFlags.fan_spd = 0;
+		//gSystemFlags.fan_spd_default = 0;
 		BLOWER_FAN1 = 0;
 		BLOWER_FAN2 = 0;
 		BLOWER_FAN3 = 0;
@@ -483,6 +567,26 @@ void Blower_set_speed(uint8_t spd)
 
 void Ports_to_default_config(void)
 {
+	
+	
+//config GPIO for USART3
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_USART1);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_USART1);
 
 //config GPIO for Buzzer and turn it low
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
