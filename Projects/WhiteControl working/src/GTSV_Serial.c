@@ -267,7 +267,9 @@ void Serial_tx_send_sys_state_upd_cmd(void)
 	case SYS_STATE_BLOWING:
 		//tmp_bytes[0] = SYS_STATE_BLOWING;
 		tmp_bytes[2] = gSystemFlags.fan_spd_default;
-		tx_pk.data_len = 3;
+		tmp_bytes[3] = gSystemFlags.ctime_hrs;
+		tmp_bytes[4] = gSystemFlags.ctime_mins;
+		tx_pk.data_len = 5;
 		Serial_tx_send_cmd(&tx_pk);
 		break;
 	case SYS_STATE_APO_DTIME_ADJ:
@@ -318,6 +320,10 @@ void Serial_cmd_detect(void)
 				RTC_change_time(gSystemFlags.tmp_hour, gSystemFlags.tmp_min, 0);
 				break;
 			case SYS_STATE_BLOWING:
+				if(gSystemFlags.sys_state == SYS_STATE_OFF){
+					gSystemFlags.ctime_hrs = *(results.pdata+3);
+					gSystemFlags.ctime_mins = *(results.pdata+4);
+				}
 				gSystemFlags.sys_state = SYS_STATE_BLOWING;
 				gSystemFlags.fan_spd_default = *(results.pdata+2);
 				Blower_set_speed(gSystemFlags.fan_spd_default);

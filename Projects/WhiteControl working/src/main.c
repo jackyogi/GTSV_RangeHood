@@ -131,10 +131,20 @@ uint8_t test=0;
 void main_tick(void)
 {
 
+	
+
+	//if(gSystemFlags.ms50_flag){
+		//gSystemFlags.ms50_flag = 0;
+		
 	Tsense_key_detect();
 	Serial_cmd_detect();
-
 	main_big_switch();
+	if(Tsense_check_key_up(TSENSE_KEY_LIGHT) && (gSystemFlags.sys_state != SYS_STATE_CLK_ADJ)){
+		Buzzer_bip();
+		gSystemFlags.light_state ^= 1;
+		gSystemFlags.control_master = TRUE;
+	}
+	//}
 
 	if(gSystemFlags.uid_update_flag){
 		static uint8_t uid_cnt=0;
@@ -157,11 +167,7 @@ void main_tick(void)
 
 
 //for any SYS State
-	if(Tsense_check_key(TSENSE_KEY_LIGHT) && (gSystemFlags.sys_state != SYS_STATE_CLK_ADJ)){
-		Buzzer_bip();
-		gSystemFlags.light_state ^= 1;
-		gSystemFlags.control_master = TRUE;
-	}
+
 
 	if(gSystemFlags.light_state){
 		Lcd_icon_on(LCD_ICON_LIGHT);
@@ -322,8 +328,13 @@ void main_big_switch(void)
 			if(Tsense_check_key(TSENSE_KEY_LIGHT)){
 				RTC_change_time(gSystemFlags.tmp_hour, gSystemFlags.tmp_min, 0);
 				gSystemFlags.sys_state = SYS_STATE_OFF;
-				Buzzer_bip();
+				//Buzzer_bip();
+				while(Tsense_check_key_touching(TSENSE_KEY_LIGHT)){}
+				while(Tsense_check_key_up(TSENSE_KEY_LIGHT)){}
+				while(Tsense_check_key_up(TSENSE_KEY_LIGHT)){}
+				gSystemFlags.light_state ^= 1;
 				gSystemFlags.control_master = TRUE;
+				Buzzer_bip();
 			}
 
 			//key plus
@@ -357,22 +368,21 @@ void main_big_switch(void)
 
 	case SYS_STATE_OFF:
 		//*****update LCD & LED
-		//if(!gSystemFlags.sys_state_off_changing){
-			Lcd_clear_hour2_min2();
-			Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, 11); //off
-			Lcd_icon_fan(3);  //fan icons off
-			Lcd_icon_off(LCD_ICON_COLON2);
-			Lcd_icon_off(LCD_ICON_CLOCK);
-			Lcd_fill_hour1(RTC_TimeStructure.RTC_Hours);
-			Lcd_fill_min1(RTC_TimeStructure.RTC_Minutes);
-			//blink colon2 icon
-			if(Lcd_get_blink_cursor()){
-				Lcd_icon_on(LCD_ICON_COLON1);
-			}else{
-				Lcd_icon_off(LCD_ICON_COLON1);
-			}
 
-		//}
+		Lcd_clear_hour2_min2();
+		Lcd_fill_pos_with_num(LCD_POS_FAN_SPEED, 11); //off
+		Lcd_icon_fan(3);  //fan icons off
+		Lcd_icon_off(LCD_ICON_COLON2);
+		Lcd_icon_off(LCD_ICON_CLOCK);
+		Lcd_fill_hour1(RTC_TimeStructure.RTC_Hours);
+		Lcd_fill_min1(RTC_TimeStructure.RTC_Minutes);
+		//blink colon2 icon
+		if(Lcd_get_blink_cursor()){
+			Lcd_icon_on(LCD_ICON_COLON1);
+		}else{
+			Lcd_icon_off(LCD_ICON_COLON1);
+		}
+
 
 		//*****check keys
 		if(Tsense_check_key_holding(TSENSE_KEY_LIGHT)){
@@ -384,16 +394,38 @@ void main_big_switch(void)
 			gSystemFlags.time_adj_delay=0;
 			gSystemFlags.control_master = TRUE;
 		}
+		if(Tsense_check_key_holding(TSENSE_KEY_POWER)){
+			Buzzer_bip();
+			gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
+			gSystemFlags.time_adj_delay =0;
+			gSystemFlags.control_master = TRUE;
+		}
+		if(Tsense_check_key_holding(TSENSE_KEY_MINUS)){
+			Buzzer_bip();
+			gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
+			gSystemFlags.time_adj_delay =0;
+			gSystemFlags.control_master = TRUE;
+		}
+		if(Tsense_check_key_holding(TSENSE_KEY_PLUS)){
+			Buzzer_bip();
+			Ctime_to_zero();
+			gSystemFlags.sys_state = SYS_STATE_BLOWING;
+			Ctime_begin_counting();
+			Blower_set_speed(gSystemFlags.fan_spd_default);
+			gSystemFlags.control_master = TRUE;
+		}
+		
 		//key power  --> begin blowing with def spd & counting time
-		if(Tsense_check_key_up(TSENSE_KEY_POWER)
-				&& !gSystemFlags.sys_state_off_changing){
+		if(Tsense_check_key_up(TSENSE_KEY_POWER)){
 			Buzzer_bip();
 			gSystemFlags.sys_state = SYS_STATE_BLOWING;
 			Ctime_begin_counting();
 			Blower_set_speed(gSystemFlags.fan_spd_default);
 			gSystemFlags.control_master = TRUE;
 		}
+		
 		//hold key minus --> change to Dtime_adj
+		/*
 		if(gSystemFlags.sys_state_off_changing){
 			if(Tsense_check_key_up(TSENSE_KEY_MINUS)
 						|| Tsense_check_key_up(TSENSE_KEY_POWER)){
@@ -409,29 +441,25 @@ void main_big_switch(void)
 				}
 			}
 		}
+		*/
+
+		/*
 		if(Tsense_check_key_holding(TSENSE_KEY_MINUS)
 				|| Tsense_check_key_holding(TSENSE_KEY_POWER)){
-
+			
 			gSystemFlags.sys_state_off_changing = 1;
-			Lcd_icon_off(LCD_ICON_COLON1); //off colon1 icon
+			Lcd_icon_off(LCD_ICON_COLON2); //off colon1 icon
 			Lcd_icon_fan(5); //off fan icons
-			Lcd_clear_hour1_min1();
+			Lcd_clear_hour2_min2();
 			Lcd_icon_on(LCD_ICON_CLOCK); //on clock icon
-			Lcd_icon_on(LCD_ICON_COLON2); //on colon2 icon
-			Lcd_fill_hour2(gSystemFlags.blower_apo_mins);
-			Lcd_fill_min2(0);
+			Lcd_icon_on(LCD_ICON_COLON1); //on colon2 icon
+			Lcd_fill_hour1(gSystemFlags.blower_apo_mins);
+			Lcd_fill_min1(0);
 			gSystemFlags.control_master = TRUE;
 		}
-
+		*/
 		//hold key Plus --> clear ctime & change to blowing
-		if(Tsense_check_key_holding(TSENSE_KEY_PLUS)){
-			Buzzer_bip();
-			Ctime_to_zero();
-			gSystemFlags.sys_state = SYS_STATE_BLOWING;
-			Ctime_begin_counting();
-			Blower_set_speed(gSystemFlags.fan_spd_default);
-			gSystemFlags.control_master = TRUE;
-		}
+
 		//gSystemFlags.sys_state_apo_dtime_adj=0;
 
 		break;
@@ -576,12 +604,12 @@ void main_big_switch(void)
 	case SYS_STATE_APO_DTIME_ADJ:
 
 		//*****update LCD & LED
-		Lcd_icon_off(LCD_ICON_COLON1); //off colon1 icon
+		Lcd_icon_off(LCD_ICON_COLON2); //off colon1 icon
 		Lcd_icon_fan(5); //off fan icons
-		Lcd_clear_hour1_min1();
+		Lcd_clear_hour2_min2();
 
 		Lcd_icon_on(LCD_ICON_CLOCK); //on clock icon
-		Lcd_icon_on(LCD_ICON_COLON2); //on colon2 icon
+		Lcd_icon_on(LCD_ICON_COLON1); //on colon2 icon
 
 		//blink colon1 icon
 		if(Lcd_get_blink_cursor()
@@ -589,10 +617,10 @@ void main_big_switch(void)
 			     || Tsense_check_key_touching(TSENSE_KEY_MINUS)
 			     || Tsense_check_key(TSENSE_KEY_MINUS)){
 
-			Lcd_fill_hour2(gSystemFlags.blower_apo_mins);
-			Lcd_fill_min2(0);  //min2 == 0
+			Lcd_fill_hour1(gSystemFlags.blower_apo_mins);
+			Lcd_fill_min1(0);  //min2 == 0
 		}else{
-			Lcd_clear_hour2_min2();
+			Lcd_clear_hour1_min1();
 		}
 
 		//******check time out
@@ -609,9 +637,10 @@ void main_big_switch(void)
 		}
 
 		//******check keys
-		if(Tsense_check_key_up(TSENSE_KEY_POWER)
-				&& !gSystemFlags.sys_state_off_changing){
+		if(Tsense_check_key(TSENSE_KEY_POWER)){
 			//gSystemFlags.sys_state_apo_dtime_adj=1;
+			//while(!Tsense_check_key_touching(TSENSE_KEY_POWER)){Tsense_key_detect();}
+			while(Tsense_check_key_up(TSENSE_KEY_POWER)){Tsense_key_detect();}
 			Buzzer_bip();
 			gSystemFlags.sys_state = SYS_STATE_OFF;
 			gSystemFlags.control_master = TRUE;
@@ -639,11 +668,7 @@ void main_big_switch(void)
 				gSystemFlags.blower_apo_mins--;
 			gSystemFlags.control_master = TRUE;
 		}
-		if(gSystemFlags.sys_state_off_changing){
-			gSystemFlags.sys_state_off_changing = 0;
-			//if(Tsense_check_key_up(TSENSE_KEY_MINUS))
-				//gSystemFlags.blower_apo_mins+=2;
-		}
+
 		break;
 	default:
 		gSystemFlags.sys_state = SYS_STATE_OFF;

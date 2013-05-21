@@ -295,8 +295,8 @@
   * @{ */
 
 // Single-channel keys thresholds
-#define SCKEY_DETECTTHRESHOLD_DEFAULT                (99)  /**< Single channel key detection threshold (value from 1 to 127) */
-#define SCKEY_ENDDETECTTHRESHOLD_DEFAULT             (99)  /**< Single channel key end detection threshold (value from 1 to 127) */
+#define SCKEY_DETECTTHRESHOLD_DEFAULT                (69)  /**< Single channel key detection threshold (value from 1 to 127) */
+#define SCKEY_ENDDETECTTHRESHOLD_DEFAULT             (69)  /**< Single channel key end detection threshold (value from 1 to 127) */
 #define SCKEY_RECALIBRATIONTHRESHOLD_DEFAULT       (-22)  /**< Single channel key calibration threshold (value from -1 to -128) */
 
 // Single-channel keys Acquisition values limits
