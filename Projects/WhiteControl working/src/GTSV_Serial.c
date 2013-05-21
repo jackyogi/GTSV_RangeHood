@@ -341,7 +341,8 @@ void Serial_cmd_detect(void)
 				}					
 				gSystemFlags.sys_state = SYS_STATE_APO_BLOWING;
 				gSystemFlags.fan_spd_default = *(results.pdata+2);
-				Blower_set_speed(gSystemFlags.fan_spd_default);
+				if(gSystemFlags.fan_spd_default != 0)
+					Blower_set_speed(gSystemFlags.fan_spd_default);
 				break;
 			default:
 				break;

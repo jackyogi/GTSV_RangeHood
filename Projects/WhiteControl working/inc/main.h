@@ -97,6 +97,8 @@ struct SystemFlags {
 	unsigned s2_flag:1;
 	unsigned s3_flag:1;
 	unsigned s5_flag:1;
+	unsigned holding_key_minus:1;
+	unsigned holding_key_power:1;
 	
 	unsigned fanRotate:2;
 	unsigned ms125_flag:1;

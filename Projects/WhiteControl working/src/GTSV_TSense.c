@@ -133,7 +133,20 @@ void Tsense_to_default_config(void)
 	}
 	#endif
 
-
+	
+	sSCKeyInfo[1].DetectThreshold = 69; //38
+	sSCKeyInfo[1].EndDetectThreshold = 69;
+	sSCKeyInfo[1].RecalibrationThreshold = -10;
+	sSCKeyInfo[3].DetectThreshold = 99;//99
+	sSCKeyInfo[3].EndDetectThreshold = 99;
+	sSCKeyInfo[3].RecalibrationThreshold =-10;
+	sSCKeyInfo[0].DetectThreshold = 99;//88
+	sSCKeyInfo[0].EndDetectThreshold = 99;
+	sSCKeyInfo[0].RecalibrationThreshold = -10;
+	sSCKeyInfo[2].DetectThreshold = 99;
+	sSCKeyInfo[2].EndDetectThreshold = 99;
+	sSCKeyInfo[2].RecalibrationThreshold = -10;
+	
 	//sSCKeyInfo[1].DetectThreshold = 93;
 	//sSCKeyInfo[1].EndDetectThreshold = 99;
 	//sSCKeyInfo[1].RecalibrationThreshold = -22;
