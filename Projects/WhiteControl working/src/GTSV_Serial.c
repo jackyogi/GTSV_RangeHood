@@ -326,7 +326,9 @@ void Serial_cmd_detect(void)
 				}
 				gSystemFlags.sys_state = SYS_STATE_BLOWING;
 				gSystemFlags.fan_spd_default = *(results.pdata+2);
-				Blower_set_speed(gSystemFlags.fan_spd_default);
+				//Blower_set_speed(gSystemFlags.fan_spd_default);
+				if(gSystemFlags.fan_spd_default != 0)
+					Blower_set_speed(gSystemFlags.fan_spd_default);
 				break;
 			case SYS_STATE_APO_DTIME_ADJ:
 				gSystemFlags.sys_state = SYS_STATE_APO_DTIME_ADJ;
@@ -336,7 +338,7 @@ void Serial_cmd_detect(void)
 				break;
 			case SYS_STATE_APO_BLOWING:
 				if(gSystemFlags.sys_state == SYS_STATE_BLOWING){
-					gSystemFlags.blower_apo_remaining_sec = gSystemFlags.blower_apo_mins*60;
+					gSystemFlags.blower_apo_remaining_sec = gSystemFlags.blower_apo_mins*60+1;
 					gSystemFlags.blower_apo_time_out = 0;
 				}					
 				gSystemFlags.sys_state = SYS_STATE_APO_BLOWING;

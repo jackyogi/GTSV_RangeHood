@@ -100,6 +100,10 @@ int main(void)
 	Ports_to_default_config();
   	//Lcd_to_default_config();
 	Buzzer_timer_to_default_state();
+	for(i=0; i<28; i++){
+		if(gSystemFlags.ms100_flag)
+			gSystemFlags.ms100_flag =0;
+	}
 	Tsense_to_default_config();
 	//Timers_to_default_config();
 	Spilcd_to_default_config();

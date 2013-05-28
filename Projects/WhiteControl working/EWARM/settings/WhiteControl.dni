@@ -1,5 +1,5 @@
 [DebugChecksum]
-Checksum=968011032
+Checksum=1778017884
 [Stack]
 FillEnabled=0
 OverflowWarningsEnabled=1
@@ -47,10 +47,12 @@ ITMportsTermIO=0
 ITMportsLogFile=0
 ITMlogFile=$PROJ_DIR$\ITM.log
 [struct_types]
-Fmt0=RTC_TimeTypeDef-RTC_H12	3	0
-Fmt1=RTC_TimeTypeDef-RTC_Hours	3	0
-Fmt2=RTC_TimeTypeDef-RTC_Minutes	3	0
-Fmt3=RTC_TimeTypeDef-RTC_Seconds	3	0
+Fmt0=Channel_Info_T-ECSRefRest	3	0
+Fmt1=Channel_Info_T-IntegratorCounter	3	0
+Fmt2=RTC_TimeTypeDef-RTC_H12	3	0
+Fmt3=RTC_TimeTypeDef-RTC_Hours	3	0
+Fmt4=RTC_TimeTypeDef-RTC_Minutes	3	0
+Fmt5=RTC_TimeTypeDef-RTC_Seconds	3	0
 [array_types]
 Fmt0=uint32_t[16]	4	0
 Fmt1=uint8_t[16]	4	0

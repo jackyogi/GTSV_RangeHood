@@ -49,6 +49,14 @@ void Buzzer_systickISR_timing_ms(void)
 //call in Timer ISR to generate sound
 void Buzzer_timerISR_make_sound(void)
 {
+	/*
+	static uint8_t cnt=8;
+	if(cnt == 0) cnt=8;
+	else 	 cnt--;
+	
+	if(cnt <2) BUZZER_BIT = 1;
+	else 	BUZZER_BIT = 0;
+	*/
 	BUZZER_TOGGLE();
 }
 
